@@ -1,0 +1,40 @@
+================================================================================
+Mexico Abortion Data Sources
+HM/DCC
+yyyy-mm-dd: 2014-06-23
+================================================================================
+
+INITIAL TESTS REQUIRE:
+
+- birth data
+>> All birth data online (with good covariates including dd/mm/yy of birth, etc)
+>> Births online are 2001-2012, so good for reform in 2007
+>> Data is at:
+    http://www3.inegi.org.mx/sistemas/microdatos/encuestas.aspx?c=33388&s=est
+>> I can write a python script to download, unzip and append if we want.  This
+   will be quite a large dataset, so maybe we want to work with it unappended
+>> Also 
+
+- reform data
+>> Lancet article discusses
+
+CONDITIONAL ON POSITIVE INITIAL TESTS, MORE COMPREHENSIVE TESTS REQUIRE:
+- Marriages
+>> Administrative data (2001-2012) at:
+   http://www3.inegi.org.mx/sistemas/microdatos/encuestas.aspx?c=33397&s=est
+
+- Divorces
+>> Administrative data (2001-2011) at:
+   http://www3.inegi.org.mx/sistemas/microdatos/encuestas.aspx?c=33529&s=est
+
+- Fetal/Child deaths
+>> Administrative data for fetal deaths (2001-2012) at:
+   http://www3.inegi.org.mx/sistemas/microdatos/encuestas.aspx?c=33471&s=est
+>> Administrative data for all deaths (2001-2012) at:
+   http://www3.inegi.org.mx/sistemas/microdatos/encuestas.aspx?c=33398&s=est
+
+ADDITIONAL TESTS EVENTUALLY...
+- Bargaining power of women (femicide, domestic violence?)
+- Labour market (probably from ENE data that DCC is using in dynamic paper?)
+- Educational outcomes of women (children perhaps if not too soon?)
+- Others?
