@@ -37,4 +37,9 @@ ADDITIONAL TESTS EVENTUALLY...
 - Bargaining power of women (femicide, domestic violence?)
 - Labour market (probably from ENE data that DCC is using in dynamic paper?)
 - Educational outcomes of women (children perhaps if not too soon?)
+- Maternal mortality
 - Others?
+
+
+Population data: 
+http://www.conapo.gob.mx/work/models/CONAPO/Proyecciones/Datos/descargas/Estimaciones_y_Proyecciones.zip
