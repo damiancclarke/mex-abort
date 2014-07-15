@@ -195,6 +195,7 @@ bys stateNum Age (year month): gen counter=_n
 bys stateNum Age: ipolate pop counter, gen(imputePop)
 drop if imputePop==.
 replace imputePop=round(imputePop)
+drop pop counter
 
 lab dat "Mexican population data for women by age, State and year*month"
 save $DAT/populationStateYearMonth.dta, replace
