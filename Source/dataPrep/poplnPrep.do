@@ -48,6 +48,7 @@ local Numbers 29 12 09 17 10 01 03 28 32 04 22 14 26 07 25 16 30 23 13 05 21 27
 
 cd "$DAT"
 
+local graphs 0
 *********************************************************************************
 *** (2) Convert xlsx from zip file to csv data using Python + system call
 *********************************************************************************
@@ -55,11 +56,16 @@ foreach S of local States {
 	dis "Converting state `S'"
 	!xlsx2csv Estimaciones\ y\ Proyecciones\\1990-2010\\\`S'_est.xlsx `S'1990.csv	
 	!xlsx2csv Estimaciones\ y\ Proyecciones\\2010-2030\\\`S'_pry.xlsx `S'2010.csv
+
+	!xlsx2csv -s 2 Estimaciones\ y\ Proyecciones\\1990-2010\\\`S'_est.xlsx /*
+	*/ `S'mid1990.csv	
+	!xlsx2csv -s 2 Estimaciones\ y\ Proyecciones\\2010-2030\\\`S'_pry.xlsx /*
+	*/ `S'mid2010.csv
 }
 
 
 *********************************************************************************
-*** (3) Read in each csv, keep only women data
+*** (3a) Read in each csv (beginning of year), keep only women data
 *********************************************************************************
 foreach yy of numlist 1990 2010 {
 	tokenize `Numbers'
@@ -80,14 +86,49 @@ foreach yy of numlist 1990 2010 {
 			replace year_`year'=round(year_`year')
 		}
 		drop startwomen n
-		cap drop v*
+		cap drop v* 
 		if `yy'==1990 drop year_2010
 		gen stateName="`S'"
 		gen stateNum="`1'"
+		gen month=1
 		macro shift
 		save "`S'`yy'.dta", replace
 	}
 }
+
+*********************************************************************************
+*** (3b) Read in each csv (middle of year), keep only women data
+*********************************************************************************
+foreach yy of numlist 1990 2010 {
+	tokenize `Numbers'
+	foreach S of local States {
+		insheet using `S'mid`yy'.csv, clear
+		gen startwomen=1 if v1=="Mujeres"
+		gen n=_n
+		sum n if startwomen==1
+		local begin=`r(mean)'+1
+		count
+		local end=`r(N)'
+		keep in `begin'/`end'
+
+		rename v1 Age
+		foreach num of numlist 2(1)22 {
+			local year=`num'+`yy'-2
+			rename v`num' year_`year'
+			replace year_`year'=round(year_`year')
+		}
+		drop startwomen n
+		cap drop v* 
+		if `yy'==1990 drop year_2010
+		gen stateName="`S'"
+		gen stateNum="`1'"
+		gen month=7
+		drop if Age==""
+		macro shift
+		save "`S'mid`yy'.dta", replace
+	}
+}
+
 
 *********************************************************************************
 *** (4) Append 1990-2010 (estimates) with 2010-2030 (projections)
@@ -97,6 +138,11 @@ foreach S of local States {
 	merge 1:1 Age using `S'2010
 	order Age state*
 	save `S', replace
+
+	use `S'mid1990
+	merge 1:1 Age using `S'mid2010
+	order Age state*
+	save `S'mid, replace
 }
 
 *********************************************************************************
@@ -105,48 +151,83 @@ foreach S of local States {
 clear
 foreach S of local States {
 	dis "Appending `S' to aggregate file..."
-	append using `S'
+	append using `S' `S'mid
 
 	rm `S'1990.dta
 	rm `S'2010.dta
 	rm `S'1990.csv
 	rm `S'2010.csv
 	rm `S'.dta
+	rm `S'mid1990.dta
+	rm `S'mid2010.dta
+	rm `S'mid1990.csv
+	rm `S'mid2010.csv
+	rm `S'mid.dta
 }
 
 drop _merge
 destring Age, replace
 
+
+*********************************************************************************
+*** (6) Expand, impute and save month and yearly data
+*********************************************************************************
+order Age stateName stateNum month
+preserve
+keep if month==1
 lab dat "Mexican population data for women by age, State and year"
 save $DAT/populationStateYear.dta, replace
 
-keep if Age>=15&Age>=49
+keep if Age>=15&Age<=49
 save $DAT/populationStateYear1549.dta, replace
+restore
 
-*********************************************************************************
-*** (6) Make basic descriptive graphs
-*********************************************************************************
-collapse (sum) year*, by(state*)
-reshape long year_, i(stateName stateNum) j(year)
+
+reshape long year_, i(stateName stateNum Age month) j(year)
+expand 6
+bys stateNum Age year month: gen n=_n-1
+replace month=month+n
+drop n
 rename year_ pop
-replace pop=pop/1000000
-lab var pop "Population in Millions"
+replace pop=. if month!=1&month!=7
+bys stateNum Age (year month): gen counter=_n
 
-twoway line pop year, scheme(s1color) ///
-  title("All State Rough Population Trends") subtitle("Women Aged 15-49") ///
-  ytitle("Population in Millions")
-graph export "$OUT/populationRoughTrends.eps", as(eps) replace
+bys stateNum Age: ipolate pop counter, gen(imputePop)
+drop if imputePop==.
+replace imputePop=round(imputePop)
 
-twoway line pop year if stateNum=="32", scheme(s1color) ///
-  title("Mexico D.F. Rough Population Trend") subtitle("Women Aged 15-49") ///
-  ytitle("Population in Millions")
-graph export "$OUT/populationTrendDF.eps", as(eps) replace
+lab dat "Mexican population data for women by age, State and year*month"
+save $DAT/populationStateYearMonth.dta, replace
+keep if Age>=15&Age<=49
+save $DAT/populationStateYearMonth1549.dta, replace
 
-gen DF=stateNum=="32"
-collapse (sum) pop, by(DF year)
-twoway line pop year if DF==1 || line pop year if DF==0, scheme(s1color) ///
-  title("Treat and Control Rough Population Trend") ///
-  ytitle("Population in Millions") subtitle("Women Aged 15-49") ///
-  legend(label(1 "D.F.") label(2 "Rest of Mexico"))
-graph export "$OUT/populationTrendTreatControl.eps", as(eps) replace
 
+*********************************************************************************
+*** (7) Make basic descriptive graphs
+*********************************************************************************
+if `graphs'==1 {
+	use $DAT/populationStateYear.dta, clear
+	collapse (sum) year*, by(state*)
+	reshape long year_, i(stateName stateNum) j(year)
+	rename year_ pop
+	replace pop=pop/1000000
+	lab var pop "Population in Millions"
+
+	twoway line pop year, scheme(s1color) ///
+	  title("All State Rough Population Trends") subtitle("Women Aged 15-49") ///
+	  ytitle("Population in Millions")
+	graph export "$OUT/populationRoughTrends.eps", as(eps) replace
+
+	twoway line pop year if stateNum=="32", scheme(s1color) ///
+	  title("Mexico D.F. Rough Population Trend") subtitle("Women Aged 15-49") ///
+	  ytitle("Population in Millions")
+	graph export "$OUT/populationTrendDF.eps", as(eps) replace
+
+	gen DF=stateNum=="32"
+	collapse (sum) pop, by(DF year)
+	twoway line pop year if DF==1 || line pop year if DF==0, scheme(s1color) ///
+	  title("Treat and Control Rough Population Trend") ///
+	  ytitle("Population in Millions") subtitle("Women Aged 15-49") ///
+	  legend(label(1 "D.F.") label(2 "Rest of Mexico"))
+	graph export "$OUT/populationTrendTreatControl.eps", as(eps) replace
+}
