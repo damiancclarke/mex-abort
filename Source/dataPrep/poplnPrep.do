@@ -1,4 +1,4 @@
-* poplnPrep.do v 0.00               DCC/HM                 yyyy-mm-dd:2014-06-29
+* poplnPrep.do v 0.10               DCC/HM                 yyyy-mm-dd:2014-06-29
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -6,7 +6,9 @@
 one line per State*year*age group of women.  Each line then has the total number
 of women living in that State in that year.  In regressions based on age groups
 we should then collapse taking totals over various ages (ie 15-19, 20-24 and so
-forth).
+forth). This script also makes identical files, but with one line per State*year
+*month*age group of women.  These are saved (respectively) as populationStateYe-
+ar.dta and populationStateYearMonth.dta.
 
 The raw data used in this script can be downloaded in one zip file from the fol-
 lowing address:
@@ -23,6 +25,9 @@ To control this file only the glolbals and locals in section (1) need to be cha-
 nged to reflect directory structure on the local machine.
 
 For optimal viewing of this file, set tab width to 2.
+
+Modifications -- DCC 2014-07-15 (v 0.10): Updating for month*year
+              -- 
 */
 
 vers 11
