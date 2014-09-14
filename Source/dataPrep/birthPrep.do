@@ -4,8 +4,6 @@
 
 /* Script to extract all data from DBF files and convert to .dta for each year
 of births.
-
-DBFDUPM IS INCOMPLETE!!!
 */
 
 vers 11
@@ -31,7 +29,7 @@ foreach y in 01 02 03 04 05 06 07 08 09 10 11 12 {
 		!dbfdump `f'.dbf --info | grep '^[0-9]*[\.]' | grep [A-Z_] | awk {'printf "%s;", $2'} > `f'.csv
 		!echo "" >> `f'.csv
 		!dbfdump -fs=';' `f' >> `f'.csv 
-		*!dbfdump NACIM`year'.dbf -fs=';' > NACIM`year'.csv
-		*!dbfdump ENTMUN.dbf -fs=';' > ENTMUN.csv
+		insheet using `f'.csv, names delimit(";") clear
+		save ../`f'.dta, replace
 	}
 }
