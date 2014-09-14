@@ -4,6 +4,8 @@
 
 /* Script to extract all data from DBF files and convert to .dta for each year
 of births.
+
+DBFDUPM IS INCOMPLETE!!!
 */
 
 vers 11
@@ -21,7 +23,15 @@ global DAT "~/database/MexDemografia/Natalidades"
 ********************************************************************************
 *** (2) Unzip raw birth data
 ********************************************************************************
-foreach year of numlist 2001(1)2012 {
-	ls "$DAT/`year'"
-*	unzipfile "$DAT/`year'/natalidad_base_datos_`year'", replace
+foreach y in 01 02 03 04 05 06 07 08 09 10 11 12 {
+	cd "$DAT/20`y'"
+	unzipfile "natalidad_base_datos_20`y'", replace
+
+	foreach f in NACIM`y' ENTMUN {
+		!dbfdump `f'.dbf --info | grep '^[0-9]*[\.]' | grep [A-Z_] | awk {'printf "%s;", $2'} > `f'.csv
+		!echo "" >> `f'.csv
+		!dbfdump -fs=';' `f' >> `f'.csv 
+		*!dbfdump NACIM`year'.dbf -fs=';' > NACIM`year'.csv
+		*!dbfdump ENTMUN.dbf -fs=';' > ENTMUN.csv
+	}
 }
