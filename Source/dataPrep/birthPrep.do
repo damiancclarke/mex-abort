@@ -15,3 +15,13 @@ cap log close
 *** (1) Globals and locals
 ********************************************************************************
 global DIR "~/investigacion/2014/MexAbort"
+global DAT "~/database/MexDemografia/Natalidades"
+
+
+********************************************************************************
+*** (2) Unzip raw birth data
+********************************************************************************
+foreach year of numlist 2001(1)2012 {
+	ls "$DAT/`year'"
+*	unzipfile "$DAT/`year'/natalidad_base_datos_`year'", replace
+}
