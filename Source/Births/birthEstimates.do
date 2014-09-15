@@ -25,7 +25,7 @@ global LOG  "~/investigacion/2014/MexAbort/Log"
 
 cap mkdir $OUT
 cap mkdir $LOG
-log using $LOG/birthEstimates.txt, text replace
+log using $LOG/birthEstimatesPlacebo.txt, text replace
 
 local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Chihuahua Coahuila Colima DistritoFederal Durango Guanajuato Guerrero      /*
@@ -34,6 +34,7 @@ local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
 
 local import 0
+local placebo 1
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
@@ -92,8 +93,15 @@ gen quantity0=population-quantity1
 reshape long quantity, i(stateNum stateName year Age) j(birth)
 keep stateNum stateName year Age birth birthStateNum quantity
 
-gen Abortion=stateName=="DistritoFederal"&year>2008
-gen AbortionClose=stateName=="Mexico"&year>2008
+if `placebo'==1 {
+	drop if year>2008
+	gen Abortion=stateName=="DistritoFederal"&year>2004
+	gen AbortionClose=stateName=="Mexico"&year>2004
+}
+else {
+	gen Abortion=stateName=="DistritoFederal"&year>2008
+	gen AbortionClose=stateName=="Mexico"&year>2008
+}
 
 ********************************************************************************
 *** (5) Regress
@@ -139,3 +147,5 @@ foreach AA of numlist 1(1)5 {
 	dis "Logit for age = `AA' (trend)"
 	logit birth i.year i.birthState StDum* Abort* if AgeGroup==`AA' `wt', `se'
 }
+
+
