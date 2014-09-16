@@ -25,7 +25,7 @@ global LOG  "~/investigacion/2014/MexAbort/Log"
 
 cap mkdir $OUT
 cap mkdir $LOG
-log using $LOG/birthEstimatesPlacebo.txt, text replace
+log using $LOG/birthEstimates.txt, text replace
 
 local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Chihuahua Coahuila Colima DistritoFederal Durango Guanajuato Guerrero      /*
@@ -34,7 +34,7 @@ local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
 
 local import 0
-local placebo 1
+local placebo 0
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
@@ -68,6 +68,26 @@ if `import'==1 {
 	keep if year>=2001&year<2012
 	save "$BIR/BirthsStateYear", replace
 }
+
+use "$BIR/BirthsStateYear"
+gen Abortion=birthStateNum==9&year>2008
+gen AbortionClose=birthStateNum==15&year>2008
+foreach AA of numlist 15(1)40 {
+	dis "Regression for age = `AA' (no trend)"
+	reg birth i.birthStateNum i.year Abort* if Age==`AA' `wt', `se'
+}
+qui tab birthStateNum, gen(StDum)
+qui foreach num of numlist 1(1)32 {
+	replace StDum`num'= StDum`num'*year
+}
+
+foreach AA of numlist 15(1)40 {
+	dis "Regression for age = `AA' (trend)"
+	reg birth i.year i.birthState StDum* Abort* if Age==`AA' `wt', `se'
+}
+drop Abort* StDum*
+
+
 ********************************************************************************
 *** (3) Merge to population data (must rename states from popln to match)
 ********************************************************************************
