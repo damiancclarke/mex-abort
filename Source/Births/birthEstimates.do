@@ -33,8 +33,11 @@ local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Queretaro QuintanaRoo SanLuisPotsi Sinaloa Sonora Tabasco Tamaulipas       /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
 
-local import 0
+local import 1
 local placebo 0
+
+local period Month
+*local period Year
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
@@ -58,15 +61,21 @@ if `import'==1 {
 	replace ano_nac=. if ano_nac==9999
 	gen birth=1 if ano_nac==ano_reg
 
-	collapse (sum) birth (mean) edad_madr edad_padr edociv_mad escol_mad escol_pad/*
-   */ act_mad act_pad hijos_vivo hijos_sobr, by(ent_ocurr ano_nac edad_madn)
-
+	if `"`period'"'=="Year" {
+		collapse (sum) birth (mean) edad_madr edad_padr edociv_mad escol_mad escol_pad/*
+		*/ act_mad act_pad hijos_vivo hijos_sobr, by(ent_ocurr ano_nac edad_madn)
+	}
+	else if `"`period'"'=="Month" {
+		collapse (sum) birth (mean) edad_madr edad_padr edociv_mad escol_mad escol_pad/*
+		*/ act_mad act_pad hijos_vivo hijos_sobr, by(ent_ocurr ano_nac mes_nac edad_madn)
+	}
+	
 	rename edad_madn Age
 	rename ent_ocurr birthStateNum
 	rename ano_nac year
 
 	keep if year>=2001&year<2012
-	save "$BIR/BirthsStateYear", replace
+	save "$BIR/BirthsState`period'", replace
 }
 
 use "$BIR/BirthsStateYear"
