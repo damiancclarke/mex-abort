@@ -69,17 +69,17 @@ if `mon'==1 {
 
 	sort birthdate
 	foreach type in scatter line {
-	twoway `type' birth birthdate if Reform==0, yaxis(1) || /*
+	twoway `type' birth birthdate if Reform==0, yaxis(1) ylabel(120000[20000]180000) || /*
 	*/ `type' birth birthdate if Reform==1, yaxis(2) || /*
-	*/ `type' birth birthdate if Reform==2, yaxis(2) scheme(s1color) yline(2008) /*
+	*/ `type' birth birthdate if Reform==2, yaxis(2) scheme(s1color) xline(2007.33) /*
 	*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State")) /*
 	*/ note("Left hand y-axis is for all States. Right hand axis is for DF/Mexico")
 	graph export "$GRA/AllbirthsReformMonth`type'.eps", as(eps) replace
 	}
 
 	foreach type in scatter line {
-	twoway `type' birth birthdate if Reform==0, yaxis(1) || /*
-	*/ `type' birth birthdate if Reform==1, yaxis(2) scheme(s1color) yline(2008) /*
+	twoway `type' birth birthdate if Reform==0, yaxis(1) ylabel(120000[20000]180000) || /*
+	*/ `type' birth birthdate if Reform==1, yaxis(2) scheme(s1color) xline(2007.33) /*
 	*/ legend(label(1 "No Reform") label(2 "Mexico DF")) /*
 	*/ note("Left hand y-axis is for all States. Right hand axis is for DF")
 	graph export "$GRA/AllbirthsReformMonthDF`type'.eps", as(eps) replace
