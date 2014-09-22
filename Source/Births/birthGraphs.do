@@ -93,8 +93,12 @@ keep if ano_nac>=2001&ano_nac<2012
 gen birthdate=ano_nac+(mes_nac-1)/12
 drop if mes_nac==.
 
-twoway scatter birth birthdate if Reform==0, yaxis(1) || /*
-*/ scatter birth birthdate if Reform==1, yaxis(2) || /*
-*/ scatter birth birthdate if Reform==2, yaxis(2) scheme(s1color) /*
-*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State"))
-graph export "$GRA/AllbirthsReformMonth.eps", as(eps) replace
+sort birthdate
+foreach type in scatter line {
+	twoway `type' birth birthdate if Reform==0, yaxis(1) || /*
+	*/ `type' birth birthdate if Reform==1, yaxis(2) || /*
+	*/ `type' birth birthdate if Reform==2, yaxis(2) scheme(s1color) /*
+	*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State")) /*
+	*/ note("Left hand y-axis is for all States. Right hand axis is for DF/Mexico")
+	graph export "$GRA/AllbirthsReformMonth`type'.eps", as(eps) replace
+}
