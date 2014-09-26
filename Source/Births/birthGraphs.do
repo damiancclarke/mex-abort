@@ -17,7 +17,7 @@ global DAT  "~/database/MexDemografia/Natalidades"
 cap mkdir $GRA
 
 local day    0
-local monAll 0
+local monAll 1
 local monAge 1
 
 ********************************************************************************
@@ -65,26 +65,26 @@ if `monAll'==1 {
 	preserve
 
 	collapse (sum) birth, by(mes_nac ano_nac Reform)
+	bys mes_nac Reform: egen monthMean=mean(birth) 
+	gen birthDeMean=birth-monthMean
 	keep if ano_nac>=2001&ano_nac<2010
 	gen birthdate=ano_nac+(mes_nac-1)/12
 
 	sort birthdate
-	foreach t in scatter line {
-	twoway `t' birth birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
-	*/ ||  `t' birth birthdate if Ref==1, yaxis(2) || /*
-	*/ `t' birth birthdate if Ref==2, yaxis(2) scheme(s1color) xline(2007.33) /*
+	foreach bv in birth birthDeMean { 
+	cap mkdir $GRA/Age/`bv'
+	twoway line `bv' birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
+	*/ ||  line `bv' birthdate if Ref==1, yaxis(2) || /*
+	*/ line `bv' birthdate if Ref==2, yaxis(2) scheme(s1color) xline(2007.33) /*
 	*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State")) /*
 	*/ note("Left hand y-axis is for all States. Right hand axis is for DF/Mexico")
-	graph export "$GRA/AllbirthsReformMonth`t'.eps", as(eps) replace
-	}
+	graph export "$GRA/`bv'/AllbirthsReformMonth.eps", as(eps) replace
 
-	foreach t in scatter line {
-	twoway `t' birth birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
-	*/ || `t' birth birthdate if Ref==1, yaxis(2) scheme(s1color) xline(2007.33) /*
+	twoway line `bv' birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
+	*/ || line `bv' birthdate if Ref==1, yaxis(2) scheme(s1color) xline(2007.33) /*
 	*/ legend(label(1 "No Reform") label(2 "Mexico DF")) /*
 	*/ note("Left hand y-axis is for all States. Right hand axis is for DF")
-	graph export "$GRA/AllbirthsReformMonthDF`t'.eps", as(eps) replace
-	}
+	graph export "$GRA/`bv'/AllbirthsReformMonthDF.eps", as(eps) replace
 
 	collapse (sum) birth, by(mes_nac ano_nac)
 	gen birthdate=ano_nac+(mes_nac-1)/12
@@ -101,27 +101,34 @@ if `monAge'==1 {
 	preserve
 
 	collapse (sum) birth, by(mes_nac ano_nac Reform edad_madn)
+	bys mes_nac Reform edad_madn: egen monthMean=mean(birth) 
+	gen birthDeMean=birth-monthMean
+
 	keep if ano_nac>=2001&ano_nac<2010
 	gen birthdate=ano_nac+(mes_nac-1)/12
 
 	sort birthdate
+	foreach bv in birth birthDeMean { 
+	cap mkdir $GRA/Age/`bv'
+
 	foreach a of numlist 15(1)40 {
-		twoway line birth birthdate if Ref==0&edad_madn==`a', yaxis(1) /*
-		*/ ||  line birth birthdate if Ref==1&edad_madn==`a', yaxis(2) || /*
-		*/ line birth birthdate if Ref==2&edad_madn==`a', yaxis(2) scheme(s1color) /*
+		twoway line `bv' birthdate if Ref==0&edad_madn==`a', yaxis(1) /*
+		*/ ||  line `bv' birthdate if Ref==1&edad_madn==`a', yaxis(2) || /*
+		*/ line `bv' birthdate if Ref==2&edad_madn==`a', yaxis(2) scheme(s1color) /*
 		*/ xline(2007.33) /*
 		*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State")) /*
 		*/ note("Left hand axis is for all States. Right hand is for DF/Mexico")
-		graph export "$GRA/Age/birthsMonth`a'.eps", as(eps) replace
+		graph export "$GRA/Age/`bv'/Month`a'.eps", as(eps) replace
 	}
 
 	foreach  a of numlist 15(1)40 {
-		twoway line birth birthdate if Ref==0&edad_madn==`a', yaxis(1) /*
-		*/ || line birth birthdate if Ref==1&edad_madn==`a', yaxis(2)  /*
+		twoway line `bv' birthdate if Ref==0&edad_madn==`a', yaxis(1) /*
+		*/ || line `bv' birthdate if Ref==1&edad_madn==`a', yaxis(2)  /*
 		*/ scheme(s1color) xline(2007.33) /*
 		*/ legend(label(1 "No Reform") label(2 "Mexico DF")) /*
 		*/ note("Left hand y-axis is for all States. Right hand axis is for DF")
-		graph export "$GRA/Age/birthsMonthDF`a'.eps", as(eps) replace
+		graph export "$GRA/Age/`bv'/MonthDF`a'.eps", as(eps) replace
 	}
+	}	
 	restore
 }
