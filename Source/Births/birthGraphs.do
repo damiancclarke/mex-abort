@@ -11,14 +11,19 @@ cap log close
 *** (1) Globals and locals
 ********************************************************************************
 global BIR "~/investigacion/2014/MexAbort/Data/Births"
+global LOG "~/investigacion/2014/MexAbort/Log"
 global GRA "~/investigacion/2014/MexAbort/Results/Graphs/Trends"
 global DAT  "~/database/MexDemografia/Natalidades"
 
 cap mkdir $GRA
+log using "$LOG/birthGraphs.txt", text replace
 
 local day    0
 local monAll 1
 local monAge 1
+
+cap which movavg
+if _rc!=0 ssc install movavg
 
 ********************************************************************************
 *** (2) Open data, graph trends by day
@@ -65,32 +70,34 @@ if `monAll'==1 {
 	preserve
 
 	collapse (sum) birth, by(mes_nac ano_nac Reform)
-	bys mes_nac Reform: egen monthMean=mean(birth) 
-	gen birthDeMean=birth-monthMean
 	keep if ano_nac>=2001&ano_nac<2010
 	gen birthdate=ano_nac+(mes_nac-1)/12
 
+	bys birthdate: movavg birthMA = birth, lags(3)
+	
 	sort birthdate
-	foreach bv in birth birthDeMean { 
-	cap mkdir $GRA/Age/`bv'
-	twoway line `bv' birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
+	foreach bv in birth birthMA { 
+	cap mkdir $GRA/`bv'
+	twoway line `bv' birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000)/*
 	*/ ||  line `bv' birthdate if Ref==1, yaxis(2) || /*
 	*/ line `bv' birthdate if Ref==2, yaxis(2) scheme(s1color) xline(2007.33) /*
-	*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mexico State")) /*
-	*/ note("Left hand y-axis is for all States. Right hand axis is for DF/Mexico")
+	*/ legend(label(1 "No Reform") label(2 "Mexico DF") label(3 "Mex State")) /*
+	*/ note("Left hand axis is for all States. Right axis hand is for DF/Mexico")
 	graph export "$GRA/`bv'/AllbirthsReformMonth.eps", as(eps) replace
 
 	twoway line `bv' birthdate if Ref==0, yaxis(1) ylabel(120000[20000]180000) /*
-	*/ || line `bv' birthdate if Ref==1, yaxis(2) scheme(s1color) xline(2007.33) /*
+	*/ || line `bv' birthdate if Ref==1, yaxis(2) scheme(s1color) xline(2007.3) /*
 	*/ legend(label(1 "No Reform") label(2 "Mexico DF")) /*
 	*/ note("Left hand y-axis is for all States. Right hand axis is for DF")
 	graph export "$GRA/`bv'/AllbirthsReformMonthDF.eps", as(eps) replace
+	}
 
 	collapse (sum) birth, by(mes_nac ano_nac)
 	gen birthdate=ano_nac+(mes_nac-1)/12
 	twoway scatter birth birthdate, scheme(s1color)
 	graph export "$GRA/AllbirthsMonth.eps", as(eps) replace
 	restore
+		
 }
 
 ********************************************************************************
@@ -100,15 +107,17 @@ if `monAge'==1 {
 	cap mkdir $GRA/Age
 	preserve
 
-	collapse (sum) birth, by(mes_nac ano_nac Reform edad_madn)
-	bys mes_nac Reform edad_madn: egen monthMean=mean(birth) 
-	gen birthDeMean=birth-monthMean
-
+	collapse (sum) birth, by(mes_nac ano_nac Reform edad_madn)	
 	keep if ano_nac>=2001&ano_nac<2010
 	gen birthdate=ano_nac+(mes_nac-1)/12
 
+	keep if edad_madn>14&edad_madn<41
+	gen tth=10000
+	egen bdage=concat(birthdate tth edad_madn)
+	bys bdage: movavg birthMA = birth, lags(3)
+	
 	sort birthdate
-	foreach bv in birth birthDeMean { 
+	foreach bv in birth birthMA { 
 	cap mkdir $GRA/Age/`bv'
 
 	foreach a of numlist 15(1)40 {
