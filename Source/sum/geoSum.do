@@ -32,6 +32,10 @@ global DAT "~/investigacion/2014/MexAbort/Data/Births"
 
 local mapgen 0
 local import 0
+local entmap 0
+local munmap 0
+local entmaD 1
+local munmaD 1
 
 ********************************************************************************
 *** (2) convert shape to dta files
@@ -84,6 +88,7 @@ if `import'==1 {
 ********************************************************************************
 *** (4a) Make State maps
 ********************************************************************************
+if `entmap'==1 {
 use "$DAT/BirthsStateWide.dta", clear
 collapse (sum) birth*, by(CVE_ENT)
 
@@ -94,23 +99,62 @@ foreach y of numlist 2005(1)2010 {
 	graph export $OUT/Ebirths`y'.eps, as(eps) replace
 }
 
-gen Reform=1 if CVE_ENT=="15"
+gen Reform=CVE_ENT=="15"
 replace Reform=2 if CVE_ENT=="09"
-spmap Reform using $MAP/EntidadesCoords, id(_ID) fcolor(Heat) osize(vthin)
+spmap Reform using $MAP/EntidadesCoords, id(_ID) fcolor(Blues) osize(vthin)
 graph export $OUT/EReform.eps, as(eps) replace
+}
 
 ********************************************************************************
-*** (4b) Make Municipal maps
+*** (4b) Make State difference maps
 ********************************************************************************
+if `entmaD'==1 {
+use "$DAT/BirthsStateWide.dta", clear
+collapse (sum) birth*, by(CVE_ENT)
+
+merge 1:1 CVE_ENT using "$MAP/Entidades"
+
+gen dif1007=birth2010-birth2007
+gen dif0907=birth2009-birth2007
+	
+spmap dif1007 using $MAP/EntidadesCoords, id(_ID) fcolor(Heat) osize(vthin)
+graph export $OUT/EDbirths1007.eps, as(eps) replace
+spmap dif0907 using $MAP/EntidadesCoords, id(_ID) fcolor(Heat) osize(vthin)
+graph export $OUT/EDbirths0907.eps, as(eps) replace
+}
+
+
+********************************************************************************
+*** (4c) Make Municipal maps
+********************************************************************************
+if `munmap'==1 {
 use "$DAT/BirthsStateWide.dta", clear
 merge 1:1 CVE_ENT CVE_MUN using "$MAP/Municipios"
 
 foreach y of numlist 2005(1)2010 {
-	spmap birth`y' using $MAP/MunicipiosCoords, id(_ID) fcolor(Heat) osive(vthin)
+	spmap birth`y' using $MAP/MunicipiosCoords, id(_ID) fcolor(Heat) osize(vthin)
 	graph export $OUT/Mbirths`y'.eps, as(eps) replace
 }
 
-gen Reform=1 if CVE_ENT=="15"
+gen Reform=CVE_ENT=="15"
 replace Reform=2 if CVE_ENT=="09"
-spmap Reform using $MAP/MunicipiosCoords, id(_ID) fcolor(Heat) osive(vthin)
+spmap Reform using $MAP/MunicipiosCoords, id(_ID) fcolor(Blues) osize(vthin)
 graph export $OUT/MReform.eps, as(eps) replace
+}
+
+********************************************************************************
+*** (4d) Make Municipal difference maps
+********************************************************************************
+if `munmaD'==1 {
+	use "$DAT/BirthsStateWide.dta", clear
+	merge 1:1 CVE_ENT CVE_MUN using "$MAP/Municipios"
+
+	gen dif1007=birth2010-birth2007
+	gen dif0907=birth2009-birth2007
+
+	spmap dif1007 using $MAP/MunicipiosCoords, id(_ID) fcolor(Heat) osize(vthin)
+	graph export $OUT/MDbirths1007.eps, as(eps) replace
+
+	spmap dif0907 using $MAP/MunicipiosCoords, id(_ID) fcolor(Heat) osize(vthin)
+	graph export $OUT/MDbirths0907.eps, as(eps) replace
+}
