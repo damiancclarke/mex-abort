@@ -45,7 +45,37 @@ if `mapgen'==1 {
 	}
 }
 
-
 ********************************************************************************
 *** (3) Collapse yearly birth count by desired level
 ********************************************************************************
+foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
+	dis "Appending `yr'"
+	append using "$BIR/NACIM`yr'.dta"
+}
+
+keep if ent_ocurr<=32
+keep if mun_ocurr!=999
+drop if mes_nac==.
+drop if ano_nac==9999|mes_nac==99|dia_nac==99
+keep if ano_nac>=2001&ano_nac<2012
+
+gen birth=1
+collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac)
+
+tostring ent_ocurr, gen(CVE_ENT)
+tostring mun_ocurr, gen(CVE_MUN)
+
+foreach num of numlist 1(1)9{
+	replace CVE_ENT="0`num'" if CVE_ENT=="`num'"
+	replace CVE_MUN="00`num'" if CVE_MUN=="`num'"
+}
+foreach num of numlist 10(1)99{
+	replace CVE_MUN="0`num'" if CVE_MUN=="`num'"
+}
+
+reshape wide birth, i(CVE_ENT CVE_MUN) j(ano_nac)
+
+********************************************************************************
+*** (4) Merge into map
+********************************************************************************
+merge 1:1 CVE_ENT CVE_MUN using "$MAP/Municipios"
