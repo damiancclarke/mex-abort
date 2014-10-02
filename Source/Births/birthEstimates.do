@@ -15,13 +15,13 @@ cap log close
 ********************************************************************************
 *** (1) Globals and locals
 ********************************************************************************
-global DIR  "~/investigacion/2014/MexAbort"
 global DAT  "~/database/MexDemografia/Natalidades"
 global DAT2 "~/investigacion/2014/MexAbort/Data/Population"
-global DAT2 "~/investigacion/2014/MexAbort/Data/Population"
-global BIR "~/investigacion/2014/MexAbort/Data/Births"
+global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global OUT  "~/investigacion/2014/MexAbort/Results/Births"
 global LOG  "~/investigacion/2014/MexAbort/Log"
+global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
+global COV2 "~/investigacion/2014/MexAbort/Data/Labour"
 
 cap mkdir $OUT
 cap mkdir $LOG
@@ -33,11 +33,47 @@ local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Queretaro QuintanaRoo SanLuisPotsi Sinaloa Sonora Tabasco Tamaulipas       /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
 
+local covars 1
 local import 1
 local placebo 0
 
 local period Month
 *local period Year
+
+********************************************************************************
+*** (2) Import covariate data (previous running of Python script)
+********************************************************************************
+if `covars'==1 {
+	*foreach set in Doctors /*EducInf Income Spending*/ {
+
+	insheet using "$COV1/Doctors/Doctors.csv", tab names
+	gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
+	replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
+	destring medicalstaff, replace
+
+kill here
+
+	save "$COV1/Doctors", replace
+
+	insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
+	foreach var of varlist planteles aulas bibliotecas labor talle {
+		gen `var'Missing=`var'=="ND"
+		replace `var'=subinstr(`var',".","",1)
+		replace `var'="0" if `var'=="ND"
+		destring `var', replace
+	}
+	save "$COV1/EducInf", replace
+
+	insheet using "$COV1/Income/Income.csv", comma names clear
+	drop if year<2001
+	save "$COV1/Income", replace
+	
+	insheet using "$COV1/Spending/Spending.csv", comma names clear
+	drop if year<2001
+	save "$COV1/Spending", replace				
+}
+
+
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
@@ -46,7 +82,7 @@ if `import'==1 {
 		dis "Appending `yr'"
 		append using "$DAT/NACIM`yr'.dta"
 	}
-
+	
 	foreach v of varlist mun_resid mun_ocurr {
 		replace `v'=. if `v'==999
 	}
