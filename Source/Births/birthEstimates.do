@@ -49,10 +49,17 @@ local import  0
 local mercov  0
 local newgen  0
 local numreg  0
-local placebo 1
+local placebo 0
 
 local period Month
 *local period Year
+
+local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
+*/ totalout subsidies unemployment
+local FE i.idNum i.year#i.month
+local trend StDum*
+local se cluster(idNum)
+
 
 ********************************************************************************
 *** (2a) Import covariate data (previous running of Python script)
@@ -290,6 +297,8 @@ if `newgen'==1 {
 	gen Abortion      = stateid=="09"&year>2008
 	gen AbortionClose = stateid=="15"&year>2008
 
+	gen yearmonth     = year+(month-1)/12
+	
 	qui tab stateid, gen(StDum)
 	qui foreach num of numlist 1(1)32 {
 		replace StDum`num'= StDum`num'*year
@@ -304,57 +313,75 @@ if `newgen'==1 {
 ********************************************************************************
 if `numreg'==1 {
 	use "$BIR/BirthsMonthCovariates"
-
-	cap rm "$OUT/MonthMunicFE.xls"
-	cap rm "$OUT/MonthMunicFETrend.xls"
-
+	keep if Age<=40&Age>14
+	
 	destring stateid, gen(idNum)
 	
-	foreach AA of numlist 15(1)40 {
-		dis "Regression for age = `AA' (no trend)"
-		qui reg birth i.idNum i.year Abort* if Age==`AA', cluster(idNum)
-		outreg2 Abort* using "$OUT/MonthMunicFE.xls", excel append
-	}
-
-	foreach AA of numlist 15(1)40 {
-		dis "Regression for age = `AA' (trend)"
-		qui reg birth i.year i.idNum StDum* Abort* if Age==`AA', cluster(idNum)
-		outreg2 Abort* using "$OUT/MonthMunicFETrend.xls", excel append
-	}
+	parmby "reg birth `FE' `cont' Abort*, `se'", by(Age) saving("$OUT/MFE.dta") 
+	parmby "reg birth `FE' `trend' `cont' Abort*, `se'", by(Age) saving("$OUT/MFET.dta") 
 }
 
 ********************************************************************************
 *** (8) Placebo regressions
 ********************************************************************************
 if `placebo'==1 {
-	use "$BIR/BirthsMonthCovariates"
-	mkdir "$OUT/Placebo"
-
-
+	use "$BIR/BirthsMonthCovariates", clear
+	keep if Age<=40&Age>14
+	cap mkdir "$OUT/Placebo"
+	global P "$OUT/Placebo"
+	
 	destring stateid, gen(idNum)
 
-	foreach num of numlist 3 4 5 6 {
-		cap rm "$OUT/Placebo/MonthMunicFE`num'.xls"
-		cap rm "$OUT/Placebo/MonthMunicFETrend`num'.xls"
+	foreach n of numlist 3 4 5 6 {
+		gen Placebo`n'      = stateid=="09"&year>200`n'
+		gen PlaceboClose`n' = stateid=="15"&year>200`n'
+		replace Placebo`n'       = . if year>2008
+		replace PlaceboClose`n'  = . if year>2008
 
-		gen Placebo`num'      = stateid=="09"&year>200`num'
-		gen PlaceboClose`num' = stateid=="15"&year>200`num'
-		replace Placebo`num'       = . if year>2008
-		replace PlaceboClose`num'  = . if year>2008
-		foreach AA of numlist 15(1)40 {
-			dis "Regression for age = `AA' (no trend)"
-			qui reg birth i.idNum i.year Place* if Age==`AA', cluster(idNum)
-			outreg2 Abort* using "$OUT/Placebo/MonthMunicFE`num'.xls", excel append
-		}
-
-		foreach AA of numlist 15(1)40 {
-			dis "Regression for age = `AA' (trend)"
-			qui reg birth i.year i.idNum StDum* Place* if Age==`AA', cluster(idNum)
-			outreg2 Place* using "$OUT/Placebo/MonthMunicFETrend`num'.xls", excel append
-		}
+		parmby "reg birth `FE' `cont' Place*, `se'", by(Age) /*
+		*/ saving("$P/MFE`n'.dta") 
+		parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
+		*/ saving("$P/MFET`n'.dta") 
 		drop Place*
 	}
 }
+
+********************************************************************************
+*** (9) Plot main results by age
+********************************************************************************
+use "$OUT/MFE.dta"
+keep if parm=="Abortion"|parm=="AbortionClose"
+eclplot est min max Age if parm=="Abortion", scheme(s1color)
+graph export "$OUT/DF_EstimatesAge.eps", as(eps) replace
+eclplot est min max Age if parm=="AbortionClose", scheme(s1color)
+graph export "$OUT/Mex_EstimatesAge.eps", as(eps) replace
+
+********************************************************************************
+*** (9) Import regression results and plot
+********************************************************************************
+clear
+append using "$OUT/MFE.dta" "$P/MFE3.dta" "$P/MFE4.dta" "$P/MFE5.dta" "$P/MFE6.dta"
+keep if parm=="Abortion"|parm=="AbortionClose"|parm=="Placebo3"| /*
+*/ parm=="PlaceboClose3"|parm=="Placebo4"|parm=="PlaceboClose4"| /*
+*/ parm=="PlaceboClose4"|parm=="Placebo5"|parm=="PlaceboClose5"| /*
+*/ parm=="PlaceboClose5"|parm=="Placebo6"|parm=="PlaceboClose6"
+
+gen year=2003 if parm=="PlaceboClose3"|parm=="Placebo3"
+replace year=2004 if parm=="PlaceboClose4"|parm=="Placebo4"
+replace year=2005 if parm=="PlaceboClose5"|parm=="Placebo5"
+replace year=2006 if parm=="PlaceboClose6"|parm=="Placebo6"
+replace year=2008 if parm=="AbortionClose"|parm=="Abortion"
+
+keep if Age==25
+eclplot est min max year if parm=="Placebo3"|parm=="Placebo4"|/*
+*/ parm=="Placebo5"|parm=="Placebo6"|parm=="Abortion", scheme(s1color)
+graph export "$OUT/DF_EstimatesPlacebo.eps", as(eps) replace
+
+eclplot est min max year if parm=="PlaceboClose3"|parm=="PlaceboClose4"|/*
+*/ parm=="PlaceboClose5"|parm=="PlaceboClose6"|parm=="AbortionClose", scheme(s1color)
+graph export "$OUT/Mex_EstimatesPlacebo.eps", as(eps) replace 
+
+
 
 
 /*
