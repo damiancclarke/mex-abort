@@ -5,6 +5,8 @@
 /* Combine birth data with population data to determine 1/0 outcome for each wo-
 man living in each State.  Run weighted binary regression for birth against tre-
 atment.
+
+Note that period won't work for year.
 */
 
 vers 11
@@ -30,7 +32,7 @@ log using $LOG/birthEstimates.txt, text replace
 local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Chihuahua Coahuila Colima DistritoFederal Durango Guanajuato Guerrero      /*
 */ Hidalgo Jalisco Mexico Michoacan Morelos Nayarit NuevoLeon Oaxaca Puebla   /*
-*/ Queretaro QuintanaRoo SanLuisPotsi Sinaloa Sonora Tabasco Tamaulipas       /*
+*/ Queretaro QuintanaRoo SanLuisPotosi Sinaloa Sonora Tabasco Tamaulipas      /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
 local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
@@ -41,9 +43,9 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 
 
 local covars  0
-local covmer  1
-local import  0 
-local numregs 0
+local covmer  0
+local import  0
+local numreg  0
 local placebo 0
 
 local period Month
@@ -172,7 +174,8 @@ if `covmer'==1 {
 	gen stateid=substr(id,1,2)
 	
 	merge m:1 stateid year month using "$COV2/Labour"
-	save $BIR/BirthCovariates, replace
+	drop _merge
+	save "$BIR/BirthCovariates", replace
 }
 
 ********************************************************************************
@@ -196,66 +199,123 @@ if `import'==1 {
 		replace `v'=. if `v'==99
 	}
 	replace ano_nac=. if ano_nac==9999
-	gen birth=1 if ano_nac==ano_reg
 
+	gen birth=1 /*if ano_nac==ano_reg*/
+	keep if ano_nac>=2001&ano_nac<2012
+
+
+	drop if mun_ocurr==.
+	drop if mes_nac==.
+	
+	
 	if `"`period'"'=="Year" {
-		collapse (sum) birth (mean) edad_madr edad_padr edociv_mad escol_mad escol_pad/*
-		*/ act_mad act_pad hijos_vivo hijos_sobr, by(ent_ocurr ano_nac edad_madn)
+		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
 	}
 	else if `"`period'"'=="Month" {
-		collapse (sum) birth (mean) edad_madr edad_padr edociv_mad escol_mad escol_pad/*
-		*/ act_mad act_pad hijos_vivo hijos_sobr, by(ent_ocurr ano_nac mes_nac edad_madn)
+		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
+		rename mes_nac month
 	}
 	
 	rename edad_madn Age
 	rename ent_ocurr birthStateNum
+	rename mun_ocurr birthMunNum
 	rename ano_nac year
 
-	keep if year>=2001&year<2012
-	save "$BIR/BirthsState`period'", replace
+	tostring birthStateNum, gen(entN)
+	gen length=length(entN)
+	gen zero="0" if length==1
+	egen stateid=concat(zero entN)
+	drop length zero entN
+
+	tostring birthMunNum, gen(munN)
+	gen length=length(munN)
+	gen zero="0" if length==2
+	replace zero="00" if length==1
+	egen munid=concat(zero munN)
+	drop length zero munN
+
+	egen id=concat(stateid munid)
+	save "$BIR/Births`period'", replace
 }
+
+********************************************************************************
+*** (4) Merge to population data (must rename states from popln to match)
+********************************************************************************
+*use "$DAT2/populationStateYearMonth1549.dta", clear
+*gen birthStateNum=.
+*local nn=1
+
+*foreach SS of local sName {
+*	dis "`SS'"
+*	replace birthStateNum=`nn' if stateName==`"`SS'"'
+*	local ++nn
+*}
+
+**tostring birthStateNum, gen(nid)
+**gen length=length(nid)
+**gen zero="0" if length==1
+**egen stateid=concat(zero nid)
+**drop nid length zero
+
+**drop if year<2001|year>2011
+**merge m:1 stateid year month using "$BIR/BirthCovariates"
+
+**kill here
+
+
+*merge 1:m birthStateNum Age year month using "$BIR/BirthsMonth" 
+*drop if Age<15|Age>49
+
+
+*keep if _merge==3
+*drop _merge
+
+********************************************************************************
+*** (5) Merge to covariates
+********************************************************************************
+use "$BIR/BirthsMonth", clear
+merge m:1 id year month using "$BIR/BirthCovariates"
+replace birth=0 if _merge==2
+drop _merge
+
+
+********************************************************************************
+*** (6) Generate treatment and trends
+********************************************************************************
+gen Abortion      = stateid=="09"&year>2008
+gen AbortionClose = stateid=="15"&year>2008
+
+qui tab stateid, gen(StDum)
+qui foreach num of numlist 1(1)32 {
+	replace StDum`num'= StDum`num'*year
+}
+
+label data "Full birth data collapsed by Municipality and Age, with covariates"
+save "$BIR/BirthsMonthCovariates", replace
+
 
 ********************************************************************************
 *** (4) Run total number regressions
 ********************************************************************************
 if `numreg'==1 {
-	use "$BIR/BirthsStateYear"
-	gen Abortion=birthStateNum==9&year>2008
-	gen AbortionClose=birthStateNum==15&year>2008
-
+	cap rm "$OUT/MonthMunicFE.xls"
+	cap rm "$OUT/MonthMunicFETrend.xls"
 
 	foreach AA of numlist 15(1)40 {
 		dis "Regression for age = `AA' (no trend)"
-		reg birth i.birthStateNum i.year Abort* if Age==`AA' `wt', `se'
-	}
-	qui tab birthStateNum, gen(StDum)
-	qui foreach num of numlist 1(1)32 {
-		replace StDum`num'= StDum`num'*year
+		qui reg birth i.munid i.year Abort* if Age==`AA', cluster(munid)
+		outreg2 Abort* using "$OUT/MonthMunicFE.xls", excel append
 	}
 
 	foreach AA of numlist 15(1)40 {
 		dis "Regression for age = `AA' (trend)"
-		reg birth i.year i.birthState StDum* Abort* if Age==`AA' `wt', `se'
+		reg birth i.year i.munid StDum* Abort* if Age==`AA', cluster(munid)
+		outreg2 Abort* using "$OUT/MonthMunicFETrend.xls", excel append
 	}
-	drop Abort* StDum*
 }
 
-********************************************************************************
-*** (3) Merge to population data (must rename states from popln to match)
-********************************************************************************
-use "$DAT2/popStateYr1549LONG.dta", clear
-gen birthStateNum=.
-local nn=1
 
-foreach SS of local sName {
-	dis "`SS'"
-	replace birthStateNum=`nn' if stateName==`"`SS'"'
-	local ++nn
-}
-
-merge 1:1 birthStateNum year Age using "$BIR/BirthsStateYear" 
-keep if _merge==3
-
+/*
 ********************************************************************************
 *** (4) Gen birth no birth
 ********************************************************************************
@@ -319,5 +379,4 @@ foreach AA of numlist 1(1)5 {
 	dis "Logit for age = `AA' (trend)"
 	logit birth i.year i.birthState StDum* Abort* if AgeGroup==`AA' `wt', `se'
 }
-
-
+*/
