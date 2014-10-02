@@ -21,7 +21,7 @@ global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global OUT  "~/investigacion/2014/MexAbort/Results/Births"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
-global COV2 "~/investigacion/2014/MexAbort/Data/Labour"
+global COV2 "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
 
 cap mkdir $OUT
 cap mkdir $LOG
@@ -32,9 +32,16 @@ local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
 */ Hidalgo Jalisco Mexico Michoacan Morelos Nayarit NuevoLeon Oaxaca Puebla   /*
 */ Queretaro QuintanaRoo SanLuisPotsi Sinaloa Sonora Tabasco Tamaulipas       /*
 */ Tlaxcala Veracruz Yucatan Zacatecas
+local lName aguascalientes baja_california baja_california_sur campeche       /*
+*/ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
+*/ guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     /*
+*/ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
+*/ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
+*/	yucatan zacatecas
+
 
 local covars 1
-local import 1
+local import 0
 local placebo 0
 
 local period Month
@@ -86,7 +93,7 @@ if `covars'==1 {
 		drop n
 		save "$COV1/`cv'", replace
 	}
-
+	
 	*EXPAND TO MONTHS
 	foreach set in Doctors EducInf Income Spending {
 		use "$COV1/`set'"
@@ -95,9 +102,30 @@ if `covars'==1 {
 		drop if month>12
 		save, replace
 	}
+
+	foreach ENT of local lName {
+		insheet using "$COV2/`ENT'.csv", comma names clear
+		keep state number year trimeter desocup dsea
+		drop if year<2001|year>2011
+		rename trimeter trimester
+		rename desocup unemployment
+		rename dsea deseasonUnemployment
+		destring unemp, replace
+		destring desea, replace
+		expand 3
+		bys state year trimester: gen month=_n
+		replace month=month+3 if trimester=="II"
+		replace month=month+6 if trimester=="III"
+		replace month=month+9 if trimester=="IV"
+		save "$COV2/`ENT'", replace
+	}
+	clear
+	foreach ENT of local lName {
+		append using "$COV2/`ENT'"
+	}
+	save "$COV2/Labour", replace
 }
 
-kill
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
