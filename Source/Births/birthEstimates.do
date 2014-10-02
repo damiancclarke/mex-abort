@@ -8,7 +8,8 @@ atment.
 
 Note that period won't work for year.
 
-
+Past major versions
+   > v0.00: Ran logit of birth versus no birth.  This only works at state level
 
 */
 
@@ -336,8 +337,8 @@ if `AgeGrp'==1 {
 	replace AgeGroup=3 if Age>=25&Age<30
 	replace AgeGroup=4 if Age>=30
 
-	collapse (sum) birth (mean) `controls' idNum year month `trend', /*
-	*/ by(AgeGroup stateid munid id)
+	collapse (sum) birth (mean) Abort* `cont' idNum `trend', /*
+	*/ by(AgeGroup stateid munid id year month)
 	
 	parmby "reg birth `FE' `cont' Abort*, `se'", by(AgeGroup) /*
 	*/ saving("$OUT/MFEAgeG.dta") 
@@ -384,8 +385,8 @@ if `placGrp'==1 {
 	replace AgeGroup=3 if Age>=25&Age<30
 	replace AgeGroup=4 if Age>=30
 
-	collapse (sum) birth (mean) `controls' idNum year month `trend', /*
-	*/ by(AgeGroup stateid munid id)
+	collapse (sum) birth (mean) `cont' idNum `trend', /*
+	*/ by(AgeGroup stateid munid id year month)
 
 	foreach n of numlist 4 5 6 7 {
 		foreach m of numlist 1(2)11 {
