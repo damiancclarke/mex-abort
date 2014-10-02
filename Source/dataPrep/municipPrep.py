@@ -17,7 +17,6 @@
 #       siha_2_2_2.xls: Egresos Brutos Municipales (1998-2010)
 #       siha_2_2_5_2.xls: Infraestructura Educativa por Municipio (2005-2010)
 #       siha_2_2_5_5.xls: Personal Medico por Municipio (2005-2010)
-#       siha_2_2_5_5.xls: Personal Medico por Municipio (2005-2010)
 #       siha_2_2_5_7.xls: Personal en Educacion por Municipio (2005-2010)
 #       siha_2_2_5_8.xls: Alumnos en Educacion por Municipio (2005-2010)
 #       siha_2_2_5_10.xls: Escuelas por Municipio (2005-2010)
@@ -52,6 +51,11 @@ states = ['aguascalientes','baja_california','baja_california_sur','campeche',
 number = ['01','02','03','04','05','06','07','08','09','10','11','12','13','14',
           '15','16','17','18','19','20','21','22','23','24','25','26','27','28',
           '29','30','31','32']
+
+msheet = ['siha_2_2_1.xls','siha_2_2_2.xls','siha_2_2_5_2.xls','siha_2_2_5_5.xls',
+          'siha_2_2_5_7.xls','siha_2_2_5_8.xls','siha_2_2_5_10.xls']
+mnames = ['Income','Spending','EducInf','Doctors','Teachers','Students','Schools']
+
 
 #-------------------------------------------------------------------------------
 #--- (2) Dump labour data for each state into csv
@@ -88,3 +92,43 @@ for n,s in enumerate(states):
 #-------------------------------------------------------------------------------
 #--- (3) Dump other municipalty files
 #-------------------------------------------------------------------------------
+for fold in mnames:
+    try:
+        os.mkdir(municp + fold)
+    except:
+        print "folder already exists"
+
+for n in [0,1]:
+    os.system('xls2csv ' +municp+msheet[n] + ' > ' +municp+mnames[n]+'/dump.csv' )
+    inf = open(municp+mnames[n]+'/dump.csv', 'rt')
+    of = open(municp+mnames[n]+'/'+mnames[n]+'.csv', 'wt')
+
+    if n==0:
+        year = 1988
+        of.write('\"Year\",\"ID\",\"State\",\"Municip\",\"TotalInc\",\"Taxes\",'+
+                 '\"Duties\",\"Products\",\"Aprovs\",\"Improves\",\"Particip\",'+
+                 '\"StateFunds\",\"Other\",\"ThirdParty\",\"Finance"\,\"Open\"'+'\n')
+    else:
+        year = 1997
+        of.write('\"Year\",\"ID\",\"State\",\"Municip\",\"TotalOut\",'+
+                 '\"PersonalServices\",\"Materials\",\"General\",\"Subsidies\",'+
+                 '\"Goods\",\"PublicWorks\",\"Finance\",\"FedResources\",'+
+                 '\"Other\",\"ThirdParty"\,\"Debt\",\"Final\"'+'\n')
+
+    for line in inf:
+        if 'BRUTOS' in line:
+            year = year + 1
+            print year
+        elif 'TOTAL' in line:
+            a=1
+        elif 'FUENTE' in line:
+            a=2
+        elif ',' not in line:
+            a=3
+        else:
+            of.write('\"'+str(year)+'\",'+line)
+
+    inf.close()
+    of.close()
+    os.remove(municp+mnames[n]+'/dump.csv')
+
