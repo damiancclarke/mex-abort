@@ -13,6 +13,7 @@ vers 11
 clear all
 set more off
 cap log close
+set matsize 10000
 
 ********************************************************************************
 *** (1) Globals and locals
@@ -45,8 +46,10 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 local covars  0
 local covmer  0
 local import  0
+local mercov  0
+local newgen  0
 local numreg  0
-local placebo 0
+local placebo 1
 
 local period Month
 *local period Year
@@ -273,44 +276,83 @@ if `import'==1 {
 ********************************************************************************
 *** (5) Merge to covariates
 ********************************************************************************
-use "$BIR/BirthsMonth", clear
-merge m:1 id year month using "$BIR/BirthCovariates"
-replace birth=0 if _merge==2
-drop _merge
-
+if `mercov'==1 {
+	use "$BIR/BirthsMonth", clear
+	merge m:1 id year month using "$BIR/BirthCovariates"
+	replace birth=0 if _merge==2
+	drop _merge
+}
 
 ********************************************************************************
 *** (6) Generate treatment and trends
 ********************************************************************************
-gen Abortion      = stateid=="09"&year>2008
-gen AbortionClose = stateid=="15"&year>2008
+if `newgen'==1 {
+	gen Abortion      = stateid=="09"&year>2008
+	gen AbortionClose = stateid=="15"&year>2008
 
-qui tab stateid, gen(StDum)
-qui foreach num of numlist 1(1)32 {
-	replace StDum`num'= StDum`num'*year
+	qui tab stateid, gen(StDum)
+	qui foreach num of numlist 1(1)32 {
+		replace StDum`num'= StDum`num'*year
+	}
+
+	label data "Full birth data collapsed by Municipality and Age, with covariates"
+	save "$BIR/BirthsMonthCovariates", replace
 }
 
-label data "Full birth data collapsed by Municipality and Age, with covariates"
-save "$BIR/BirthsMonthCovariates", replace
-
-
 ********************************************************************************
-*** (4) Run total number regressions
+*** (7) Run total number regressions
 ********************************************************************************
 if `numreg'==1 {
+	use "$BIR/BirthsMonthCovariates"
+
 	cap rm "$OUT/MonthMunicFE.xls"
 	cap rm "$OUT/MonthMunicFETrend.xls"
 
+	destring stateid, gen(idNum)
+	
 	foreach AA of numlist 15(1)40 {
 		dis "Regression for age = `AA' (no trend)"
-		qui reg birth i.munid i.year Abort* if Age==`AA', cluster(munid)
+		qui reg birth i.idNum i.year Abort* if Age==`AA', cluster(idNum)
 		outreg2 Abort* using "$OUT/MonthMunicFE.xls", excel append
 	}
 
 	foreach AA of numlist 15(1)40 {
 		dis "Regression for age = `AA' (trend)"
-		reg birth i.year i.munid StDum* Abort* if Age==`AA', cluster(munid)
+		qui reg birth i.year i.idNum StDum* Abort* if Age==`AA', cluster(idNum)
 		outreg2 Abort* using "$OUT/MonthMunicFETrend.xls", excel append
+	}
+}
+
+********************************************************************************
+*** (8) Placebo regressions
+********************************************************************************
+if `placebo'==1 {
+	use "$BIR/BirthsMonthCovariates"
+	mkdir "$OUT/Placebo"
+
+
+	destring stateid, gen(idNum)
+
+	foreach num of numlist 3 4 5 6 {
+		cap rm "$OUT/Placebo/MonthMunicFE`num'.xls"
+		cap rm "$OUT/Placebo/MonthMunicFETrend`num'.xls"
+
+		gen Placebo`num'      = stateid=="09"&year>200`num'
+		gen PlaceboClose`num' = stateid=="15"&year>200`num'
+		replace Placebo`num'       = . if year>2008
+		replace PlaceboClose`num'  = . if year>2008
+		foreach AA of numlist 15(1)40 {
+			dis "Regression for age = `AA' (no trend)"
+			qui reg birth i.idNum i.year Place* if Age==`AA', cluster(idNum)
+			outreg2 Abort* using "$OUT/Placebo/MonthMunicFE`num'.xls", excel append
+		}
+
+		foreach AA of numlist 15(1)40 {
+			dis "Regression for age = `AA' (trend)"
+			qui reg birth i.year i.idNum StDum* Place* if Age==`AA', cluster(idNum)
+			outreg2 Place* using "$OUT/Placebo/MonthMunicFETrend`num'.xls", excel append
+		}
+		drop Place*
 	}
 }
 
