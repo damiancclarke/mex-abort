@@ -44,15 +44,20 @@ local period Month
 *** (2) Import covariate data (previous running of Python script)
 ********************************************************************************
 if `covars'==1 {
-	*foreach set in Doctors /*EducInf Income Spending*/ {
-
 	insheet using "$COV1/Doctors/Doctors.csv", tab names
 	gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
 	replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
 	destring medicalstaff, replace
 
-kill here
-
+	expand 2 if year==2010
+	expand 5 if year==2005
+	bys year clave: gen n=_n
+	replace year=2011 if year==2010&n==2
+	foreach num of numlist 1(1)5 {
+		replace year=year-`num'+1 if year==2005&n==`num'
+	}	
+	drop n
+	rename clave id	
 	save "$COV1/Doctors", replace
 
 	insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
@@ -62,18 +67,37 @@ kill here
 		replace `var'="0" if `var'=="ND"
 		destring `var', replace
 	}
+	expand 2 if year==2010
+	expand 5 if year==2005
+	bys year id: gen n=_n
+	replace year=2011 if year==2010&n==2
+	foreach num of numlist 1(1)5 {
+		replace year=year-`num'+1 if year==2005&n==`num'
+	}	
+	drop n
 	save "$COV1/EducInf", replace
 
-	insheet using "$COV1/Income/Income.csv", comma names clear
-	drop if year<2001
-	save "$COV1/Income", replace
-	
-	insheet using "$COV1/Spending/Spending.csv", comma names clear
-	drop if year<2001
-	save "$COV1/Spending", replace				
+	foreach cv in Income Spending {
+		insheet using "$COV1/`cv'/`cv'.csv", comma names clear
+		drop if year<2001
+		expand 2 if year==2010
+		bys year id: gen n=_n
+		replace year=2011 if year==2010&n==2
+		drop n
+		save "$COV1/`cv'", replace
+	}
+
+	*EXPAND TO MONTHS
+	foreach set in Doctors EducInf Income Spending {
+		use "$COV1/`set'"
+		expand 12
+		bys id year: gen month=_n
+		drop if month>12
+		save, replace
+	}
 }
 
-
+kill
 ********************************************************************************
 *** (2) Import births, rename
 ********************************************************************************
