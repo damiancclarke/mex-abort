@@ -426,8 +426,11 @@ if `placGrp'==1 {
 
 	foreach n of numlist 4 5 6 7 {
 		foreach m of numlist 1(2)11 {
+			cap rm "$P/MPlacFET_`n'_`m'.dta"
+			
 			local time = 200`n'+(`m'-1)/12
 			dis "Time is `time'"
+
 			gen Placebo`n'_`m'      = stateid=="09"&yearmonth>200`n'+(`m'-1)/12
 			gen PlaceboClose`n'_`m' = stateid=="15"&year>200`n'
 			replace Placebo`n'_`m'       = . if year>=2008
