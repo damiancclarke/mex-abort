@@ -40,31 +40,42 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */	yucatan zacatecas
 
 
-local covars 1
-local import 0
+local covars  0
+local covmer  1
+local import  0 
+local numregs 0
 local placebo 0
 
 local period Month
 *local period Year
 
 ********************************************************************************
-*** (2) Import covariate data (previous running of Python script)
+*** (2a) Import covariate data (previous running of Python script)
 ********************************************************************************
 if `covars'==1 {
 	insheet using "$COV1/Doctors/Doctors.csv", tab names
 	gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
 	replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
 	destring medicalstaff, replace
-
+	
 	expand 2 if year==2010
 	expand 5 if year==2005
 	bys year clave: gen n=_n
 	replace year=2011 if year==2010&n==2
 	foreach num of numlist 1(1)5 {
 		replace year=year-`num'+1 if year==2005&n==`num'
-	}	
+	}
 	drop n
-	rename clave id	
+	rename clave id
+	rename estado state
+	rename municipio municip
+	tostring id, gen(nid)
+	drop id
+	
+	gen length=length(nid)
+	gen zero="0" if length==4
+	egen id=concat(zero nid)
+	drop nid zero length
 	save "$COV1/Doctors", replace
 
 	insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
@@ -82,6 +93,13 @@ if `covars'==1 {
 		replace year=year-`num'+1 if year==2005&n==`num'
 	}	
 	drop n
+	tostring id, gen(nid)
+	drop id
+
+	gen length=length(nid)
+	gen zero="0" if length==4
+	egen id=concat(zero nid)
+	drop nid zero length
 	save "$COV1/EducInf", replace
 
 	foreach cv in Income Spending {
@@ -91,12 +109,21 @@ if `covars'==1 {
 		bys year id: gen n=_n
 		replace year=2011 if year==2010&n==2
 		drop n
+		cap tostring id, gen(nid)
+		cap gen nid=id
+		drop id
+
+		gen length=length(nid)
+		gen zero="0" if length==4
+		egen id=concat(zero nid)
+		drop nid zero length
 		save "$COV1/`cv'", replace
 	}
 	
 	*EXPAND TO MONTHS
 	foreach set in Doctors EducInf Income Spending {
 		use "$COV1/`set'"
+		drop if id==""
 		expand 12
 		bys id year: gen month=_n
 		drop if month>12
@@ -123,11 +150,33 @@ if `covars'==1 {
 	foreach ENT of local lName {
 		append using "$COV2/`ENT'"
 	}
+	tostring number, gen(id)
+
+	gen length=length(id)
+	gen zero="0" if length==1
+	egen stateid=concat(zero id)
+	drop id zero length number
+
+
 	save "$COV2/Labour", replace
 }
 
 ********************************************************************************
-*** (2) Import births, rename
+*** (2b) Merge covariate datasets
+********************************************************************************
+if `covmer'==1 {
+	mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
+	*/ "$COV1/Spending", match(year month id) verbose
+	keep if _merge_S==3&_merge_I==3&_merge_E==3
+	drop _merge*
+	gen stateid=substr(id,1,2)
+	
+	merge m:1 stateid year month using "$COV2/Labour"
+	save $BIR/BirthCovariates, replace
+}
+
+********************************************************************************
+*** (3) Import births, rename
 ********************************************************************************
 if `import'==1 {
 	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
@@ -166,24 +215,30 @@ if `import'==1 {
 	save "$BIR/BirthsState`period'", replace
 }
 
-use "$BIR/BirthsStateYear"
-gen Abortion=birthStateNum==9&year>2008
-gen AbortionClose=birthStateNum==15&year>2008
-foreach AA of numlist 15(1)40 {
-	dis "Regression for age = `AA' (no trend)"
-	reg birth i.birthStateNum i.year Abort* if Age==`AA' `wt', `se'
-}
-qui tab birthStateNum, gen(StDum)
-qui foreach num of numlist 1(1)32 {
-	replace StDum`num'= StDum`num'*year
-}
+********************************************************************************
+*** (4) Run total number regressions
+********************************************************************************
+if `numreg'==1 {
+	use "$BIR/BirthsStateYear"
+	gen Abortion=birthStateNum==9&year>2008
+	gen AbortionClose=birthStateNum==15&year>2008
 
-foreach AA of numlist 15(1)40 {
-	dis "Regression for age = `AA' (trend)"
-	reg birth i.year i.birthState StDum* Abort* if Age==`AA' `wt', `se'
-}
-drop Abort* StDum*
 
+	foreach AA of numlist 15(1)40 {
+		dis "Regression for age = `AA' (no trend)"
+		reg birth i.birthStateNum i.year Abort* if Age==`AA' `wt', `se'
+	}
+	qui tab birthStateNum, gen(StDum)
+	qui foreach num of numlist 1(1)32 {
+		replace StDum`num'= StDum`num'*year
+	}
+
+	foreach AA of numlist 15(1)40 {
+		dis "Regression for age = `AA' (trend)"
+		reg birth i.year i.birthState StDum* Abort* if Age==`AA' `wt', `se'
+	}
+	drop Abort* StDum*
+}
 
 ********************************************************************************
 *** (3) Merge to population data (must rename states from popln to match)
