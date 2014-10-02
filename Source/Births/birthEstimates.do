@@ -1,4 +1,4 @@
-* birthEstimates v0.00              DCC/HM                 yyyy-mm-dd:2014-09-15
+* birthEstimates v1.00              DCC/HM                 yyyy-mm-dd:2014-09-15
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -7,6 +7,9 @@ man living in each State.  Run weighted binary regression for birth against tre-
 atment.
 
 Note that period won't work for year.
+
+
+
 */
 
 vers 11
@@ -50,6 +53,8 @@ local mercov  0
 local newgen  0
 local numreg  0
 local placebo 0
+local AgeGrp  1
+local placGrp 0
 
 local period Month
 *local period Year
@@ -315,11 +320,32 @@ if `numreg'==1 {
 	use "$BIR/BirthsMonthCovariates"
 	keep if Age<=40&Age>14
 	
-	destring stateid, gen(idNum)
+	destring id, gen(idNum)
 	
 	parmby "reg birth `FE' `cont' Abort*, `se'", by(Age) saving("$OUT/MFE.dta") 
 	parmby "reg birth `FE' `trend' `cont' Abort*, `se'", by(Age) saving("$OUT/MFET.dta") 
 }
+
+if `AgeGrp'==1 {
+	use "$BIR/BirthsMonthCovariates"
+	keep if Age<=40&Age>14
+	
+	destring id, gen(idNum)
+	gen AgeGroup=1 if Age>=15&Age<20
+	replace AgeGroup=2 if Age>=20&Age<25
+	replace AgeGroup=3 if Age>=25&Age<30
+	replace AgeGroup=4 if Age>=30
+
+	collapse (sum) birth (mean) `controls' idNum year month `trend', /*
+	*/ by(AgeGroup stateid munid id)
+	
+	parmby "reg birth `FE' `cont' Abort*, `se'", by(AgeGroup) /*
+	*/ saving("$OUT/MFEAgeG.dta") 
+	parmby "reg birth `FE' `trend' `cont' Abort*, `se'", by(AgeGroup) /*
+	*/ saving("$OUT/MFETAgeG.dta") 
+}
+
+
 
 ********************************************************************************
 *** (8) Placebo regressions
@@ -330,26 +356,61 @@ if `placebo'==1 {
 	cap mkdir "$OUT/Placebo"
 	global P "$OUT/Placebo"
 	
-	destring stateid, gen(idNum)
+	destring id, gen(idNum)
 
-	foreach n of numlist 3 4 5 6 {
+	foreach n of numlist 4 5 6 {
 		gen Placebo`n'      = stateid=="09"&year>200`n'
 		gen PlaceboClose`n' = stateid=="15"&year>200`n'
 		replace Placebo`n'       = . if year>2008
 		replace PlaceboClose`n'  = . if year>2008
 
-		parmby "reg birth `FE' `cont' Place*, `se'", by(Age) /*
-		*/ saving("$P/MFE`n'.dta") 
+*		parmby "reg birth `FE' `cont' Place*, `se'", by(Age) /*
+*		*/ saving("$P/MFE`n'.dta") 
 		parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
-		*/ saving("$P/MFET`n'.dta") 
+		*/ saving("$P/MmFET`n'.dta") 
 		drop Place*
 	}
 }
 
+if `placGrp'==1 {
+	use "$BIR/BirthsMonthCovariates", clear
+	keep if Age<=40&Age>14
+	global P "$OUT/Placebo"
+	local files
+	
+	destring id, gen(idNum)
+	gen AgeGroup=1 if Age>=15&Age<20
+	replace AgeGroup=2 if Age>=20&Age<25
+	replace AgeGroup=3 if Age>=25&Age<30
+	replace AgeGroup=4 if Age>=30
+
+	collapse (sum) birth (mean) `controls' idNum year month `trend', /*
+	*/ by(AgeGroup stateid munid id)
+
+	foreach n of numlist 4 5 6 7 {
+		foreach m of numlist 1(2)11 {
+			local time = 200`n'+(`m'-1)/12
+			dis "Time is `time'"
+			gen Placebo`n'_`m'=stateid=="09"&yearmonth>200`n'+(`m'-1)/12
+			gen PlaceboClose`n' = stateid=="15"&year>200`n'
+			replace Placebo`n'       = . if year>2008
+			replace PlaceboClose`n'  = . if year>2008
+
+			parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
+			*/ saving("$P/MPlacFET_`n'_`m'.dta")
+			local files `files' "$P/MPlacFET_`n'_`m'.dta"
+		}
+	}
+	clear
+	append using `files'
+	save "$P/AgeGroupPlacebos", replace
+}
+
+
 ********************************************************************************
 *** (9) Plot main results by age
 ********************************************************************************
-use "$OUT/MFE.dta"
+use "$OUT/MFET.dta"
 keep if parm=="Abortion"|parm=="AbortionClose"
 eclplot est min max Age if parm=="Abortion", scheme(s1color)
 graph export "$OUT/DF_EstimatesAge.eps", as(eps) replace
@@ -360,7 +421,7 @@ graph export "$OUT/Mex_EstimatesAge.eps", as(eps) replace
 *** (9) Import regression results and plot
 ********************************************************************************
 clear
-append using "$OUT/MFE.dta" "$P/MFE3.dta" "$P/MFE4.dta" "$P/MFE5.dta" "$P/MFE6.dta"
+append using "$OUT/MFET.dta" "$P/MFET3.dta" "$P/MFET4.dta" "$P/MFET5.dta" "$P/MFET6.dta"
 keep if parm=="Abortion"|parm=="AbortionClose"|parm=="Placebo3"| /*
 */ parm=="PlaceboClose3"|parm=="Placebo4"|parm=="PlaceboClose4"| /*
 */ parm=="PlaceboClose4"|parm=="Placebo5"|parm=="PlaceboClose5"| /*
