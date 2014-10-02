@@ -2,11 +2,47 @@
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
-/* Combine birth data with population data to determine 1/0 outcome for each wo-
-man living in each State.  Run weighted binary regression for birth against tre-
-atment.
+/* This file combines birth data with covariates produced from the script munic-
+ipPrep.py, and runs difference in difference regressions examining the effect of
+the Mexico April 2007 abortion reform on births.  The regression takes the foll-
+owing format:
 
-Note that period won't work for year.
+births_jst = a + b*f(t) + c*loc_js + d*reform + e*X_js + f*X_s + u
+
+  where:
+    births_jst are the quantity of births in municipality j, state s and month t
+    f(t) is a flexible measure of time (FE and trends)
+    loc_js are municipality FEs
+    reform takes the value of 1 in locations and time where the reform ocurred
+    X_js are municipality-level time varying controls, and
+    X_s are state-level time varying controls
+
+We also examine spillover effects by looking at regions close to the reform. Th-
+is consists (for now) of controlling for all of Mexico as the close region, how-
+ever going forward will be determined much more precisely based on distance and
+costs and opportunities to access the reform.
+
+Along with the main regressions for each age group, a series of placebo tests a-
+re run.  This consists of using the entire pre-reform period, and comparing the
+reform regions with the non-reform regions to test the parallel trends assumpti-
+ons required for consistent identification.
+
+Currently this file only works at the level of month*municipality.  Going forwa-
+rd this will be generalised for month*state.
+
+The file can be controlled in section 1 which requires a group of globals and l-
+ocals defining locations of key data sets and specification decisions.  Current-
+ly the following data is required:
+   > Doctors.csv: number of medical staff per municipality over time
+   > EducInf.csv: investment in infrastructure over time
+   > Income.csv: income for each municipality over time
+   > Spending.csv: spending for each municipality over time
+   > Employment figure from each state from INEGI (1 sheet per state)
+   > NACIM01.dta-NACIM12.dta: raw birth records from INEGI
+
+
+    contact: mailto:damian.clarke@economics.ox.ac.uk
+
 
 Past major versions
    > v0.00: Ran logit of birth versus no birth.  This only works at state level
@@ -54,8 +90,8 @@ local mercov  0
 local newgen  0
 local numreg  0
 local placebo 0
-local AgeGrp  1
-local placGrp 0
+local AgeGrp  0
+local placGrp 1
 
 local period Month
 *local period Year
@@ -362,8 +398,8 @@ if `placebo'==1 {
 	foreach n of numlist 4 5 6 {
 		gen Placebo`n'      = stateid=="09"&year>200`n'
 		gen PlaceboClose`n' = stateid=="15"&year>200`n'
-		replace Placebo`n'       = . if year>2008
-		replace PlaceboClose`n'  = . if year>2008
+		replace Placebo`n'       = . if year>=2008
+		replace PlaceboClose`n'  = . if year>=2008
 
 *		parmby "reg birth `FE' `cont' Place*, `se'", by(Age) /*
 *		*/ saving("$P/MFE`n'.dta") 
@@ -386,20 +422,21 @@ if `placGrp'==1 {
 	replace AgeGroup=4 if Age>=30
 
 	collapse (sum) birth (mean) `cont' idNum `trend', /*
-	*/ by(AgeGroup stateid munid id year month)
+	*/ by(AgeGroup stateid munid id year month yearmonth)
 
 	foreach n of numlist 4 5 6 7 {
 		foreach m of numlist 1(2)11 {
 			local time = 200`n'+(`m'-1)/12
 			dis "Time is `time'"
-			gen Placebo`n'_`m'=stateid=="09"&yearmonth>200`n'+(`m'-1)/12
-			gen PlaceboClose`n' = stateid=="15"&year>200`n'
-			replace Placebo`n'       = . if year>2008
-			replace PlaceboClose`n'  = . if year>2008
+			gen Placebo`n'_`m'      = stateid=="09"&yearmonth>200`n'+(`m'-1)/12
+			gen PlaceboClose`n'_`m' = stateid=="15"&year>200`n'
+			replace Placebo`n'_`m'       = . if year>=2008
+			replace PlaceboClose`n'_`m'  = . if year>=2008
 
 			parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
 			*/ saving("$P/MPlacFET_`n'_`m'.dta")
 			local files `files' "$P/MPlacFET_`n'_`m'.dta"
+			drop Place*
 		}
 	}
 	clear
@@ -411,7 +448,7 @@ if `placGrp'==1 {
 ********************************************************************************
 *** (9) Plot main results by age
 ********************************************************************************
-use "$OUT/MFET.dta"
+use "$OUT/MFET.dta", clear
 keep if parm=="Abortion"|parm=="AbortionClose"
 eclplot est min max Age if parm=="Abortion", scheme(s1color)
 graph export "$OUT/DF_EstimatesAge.eps", as(eps) replace
@@ -419,7 +456,7 @@ eclplot est min max Age if parm=="AbortionClose", scheme(s1color)
 graph export "$OUT/Mex_EstimatesAge.eps", as(eps) replace
 
 ********************************************************************************
-*** (9) Import regression results and plot
+*** (10) Import regression results and plot
 ********************************************************************************
 clear
 append using "$OUT/MFET.dta" "$P/MFET3.dta" "$P/MFET4.dta" "$P/MFET5.dta" "$P/MFET6.dta"
@@ -443,71 +480,7 @@ eclplot est min max year if parm=="PlaceboClose3"|parm=="PlaceboClose4"|/*
 */ parm=="PlaceboClose5"|parm=="PlaceboClose6"|parm=="AbortionClose", scheme(s1color)
 graph export "$OUT/Mex_EstimatesPlacebo.eps", as(eps) replace 
 
-
-
-
-/*
 ********************************************************************************
-*** (4) Gen birth no birth
+*** (X) Clean
 ********************************************************************************
-rename birth quantity1
-gen quantity0=population-quantity1
-
-reshape long quantity, i(stateNum stateName year Age) j(birth)
-keep stateNum stateName year Age birth birthStateNum quantity
-
-if `placebo'==1 {
-	drop if year>2008
-	gen Abortion=stateName=="DistritoFederal"&year>2004
-	gen AbortionClose=stateName=="Mexico"&year>2004
-}
-else {
-	gen Abortion=stateName=="DistritoFederal"&year>2008
-	gen AbortionClose=stateName=="Mexico"&year>2008
-}
-
-********************************************************************************
-*** (5) Regress
-********************************************************************************
-local se cluster(birthStateNum)
-local wt [fw=quantity]
-
-foreach AA of numlist 15(1)40 {
-	dis "Logit for age = `AA' (no trend)"
-	logit birth i.birthStateNum i.year Abort* if Age==`AA' `wt', `se'
-}
-
-qui tab birthStateNum, gen(StDum)
-qui foreach num of numlist 1(1)31 {
-	replace StDum`num'= StDum`num'*year
-}
-
-foreach AA of numlist 15(1)40 {
-	dis "Logit for age = `AA' (trend)"
-	logit birth i.year i.birthState StDum* Abort* if Age==`AA' `wt', `se'
-}
-
-gen AgeGroup=1 if Age>=15&Age<=19
-replace AgeGroup=2 if Age>=20&Age<=24
-replace AgeGroup=3 if Age>=25&Age<=29
-replace AgeGroup=4 if Age>=30&Age<=34
-replace AgeGroup=5 if Age>=35&Age<=39
-
-drop StDum*
-collapse (sum) quantity, by(stateName year AgeGroup birth* Abortion AbortionClose)
-
-foreach AA of numlist 1(1)5 {
-	dis "Logit for age group = `AA' (no trend)"
-	logit birth i.birthStateNum i.year Abort* if AgeGroup==`AA' `wt', `se'
-}
-
-qui tab birthStateNum, gen(StDum)
-qui foreach num of numlist 1(1)31 {
-	replace StDum`num'= StDum`num'*year
-}
-
-foreach AA of numlist 1(1)5 {
-	dis "Logit for age = `AA' (trend)"
-	logit birth i.year i.birthState StDum* Abort* if AgeGroup==`AA' `wt', `se'
-}
-*/
+log close
