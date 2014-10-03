@@ -91,7 +91,7 @@ local newgen  0
 local numreg  0
 local placebo 0
 local AgeGrp  0
-local placGrp 1
+local placGrp 0
 
 local period Month
 *local period Year
@@ -449,8 +449,30 @@ if `placGrp'==1 {
 
 
 ********************************************************************************
-*** (9) Plot main results by age
+*** (9) Plot main results by age group and age
 ********************************************************************************
+clear 
+append using "$P/AgeGroupPlacebos" "$OUT/MFETAgeG.dta"
+gen keep=regexm(parm, "Plac|Abor")
+keep if keep==1
+eclplot est min max AgeGroup if parm=="Abortion", scheme(s1color)
+graph export "$OUT/AgeGroupResults.eps", as(eps) replace
+!epstopdf "$OUT/AgeGroupResults.eps"
+
+gen time=.
+foreach n1 of numlist 4(1)7{
+	foreach n2 of numlist 1(2)11 {
+		replace time=2000+`n1'+(`n2'-1)/12 if parm=="Placebo`n1'_`n2'"
+	}
+}
+replace time=2008 if parm=="Abortion"
+foreach g in 1 2 3 4 {
+	eclplot est min max time if AgeGroup==`g', scheme(s1color) yline(0) /*
+	*/ title("Age Group `g'")
+	graph export "$OUT/PlaceboResult_Age`g'.eps", as(eps) replace
+	!epstopdf "$OUT/PlaceboResult_Age`g'.eps"
+}
+
 use "$OUT/MFET.dta", clear
 keep if parm=="Abortion"|parm=="AbortionClose"
 eclplot est min max Age if parm=="Abortion", scheme(s1color)
