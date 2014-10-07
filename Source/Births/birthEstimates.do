@@ -65,6 +65,7 @@ global OUT  "~/investigacion/2014/MexAbort/Results/Births"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
 global COV2 "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
+global COV3 "~/investigacion/2014/MexAbort/Data/Contracep"
 
 cap mkdir $OUT
 cap mkdir $LOG
@@ -84,7 +85,7 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 
 
 local covars  0
-local covmer  0
+local covmer  1
 local import  0
 local mercov  0
 local newgen  0
@@ -228,8 +229,12 @@ if `covmer'==1 {
 	merge m:1 stateid year month using "$COV2/Labour"
 	drop _merge
 	save "$BIR/BirthCovariates", replace
-}
 
+	merge m:1 stateid year using "$COV3/Contraception"
+	drop if _merge==2
+	drop _merge
+	save "$BIR/BirthCovariates", replace	
+}
 ********************************************************************************
 *** (3) Import births, rename
 ********************************************************************************
