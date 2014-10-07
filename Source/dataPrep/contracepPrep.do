@@ -164,3 +164,6 @@ foreach var of local vars {
 	rename `var'_new `var'
 }
 
+rename entidad state_id
+label data "State level contraceptive controls (from ENSANUT/ENSA)"
+save "$OUT/Contraception", replace
