@@ -138,3 +138,29 @@ save "$OUT/Contracep2000", replace
 clear
 append using "$OUT/Contracep2000" "$OUT/Contracep2006" "$OUT/Contracep2012"
 drop anyFirst anyRecentTeen condomFirst
+save `inter', replace
+
+clear
+set obs 32
+gen entidad=""
+foreach num of numlist 1(1)9 {
+	replace entidad="0`num'" in `num'
+}
+foreach num of numlist 10(1)32 {
+	replace entidad="`num'" in `num'
+}
+
+expand 13
+bys entidad: gen year=_n
+replace year=year+1999
+merge 1:1 year entidad using `inter'
+drop _merge
+
+ds entidad year, not
+local vars `r(varlist)'
+foreach var of local vars {
+	bys entidad: ipolate `var' year, gen(`var'_new)
+	drop `var'
+	rename `var'_new `var'
+}
+
