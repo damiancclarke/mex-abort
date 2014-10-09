@@ -1,11 +1,11 @@
-* birthEstimates v1.00              DCC/HM                 yyyy-mm-dd:2014-09-15
+/* birthEstimates v1.00              DCC/HM                yyyy-mm-dd:2014-09-15
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
-/* This file combines birth data with covariates produced from the script munic-
-ipPrep.py, and runs difference in difference regressions examining the effect of
-the Mexico April 2007 abortion reform on births.  The regression takes the foll-
-owing format:
+This file combines birth data with covariates produced from the script municipP-
+rep.py and runs difference in difference regressions examining the effect of the
+Mexico April 2007 abortion reform on births.  The regression takes the following
+format:
 
 births_jst = a + b*f(t) + c*loc_js + d*reform + e*X_js + f*X_s + u
 
@@ -46,6 +46,7 @@ ly the following data is required:
 
 Past major versions
    > v0.00: Ran logit of birth versus no birth.  This only works at state level
+   > v1.00: Ran number of births at municipal level (OLS)
 
 */
 
@@ -85,13 +86,13 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 
 
 local covars  0
-local covmer  1
+local covmer  0
 local import  0
 local mercov  0
 local newgen  0
 local numreg  0
 local placebo 0
-local AgeGrp  0
+local AgeGrp  1
 local placGrp 0
 
 local period Month
@@ -234,6 +235,8 @@ if `covmer'==1 {
 	drop if _merge==2
 	drop _merge
 	save "$BIR/BirthCovariates", replace	
+
+	*HERE SHOULD MERGE IN POPULATION
 }
 ********************************************************************************
 *** (3) Import births, rename
@@ -364,8 +367,10 @@ if `numreg'==1 {
 	
 	destring id, gen(idNum)
 	
-	parmby "reg birth `FE' `cont' Abort*, `se'", by(Age) saving("$OUT/MFE.dta") 
-	parmby "reg birth `FE' `trend' `cont' Abort*, `se'", by(Age) saving("$OUT/MFET.dta") 
+	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
+	*/ saving("$OUT/MFE.dta") 
+	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
+	*/ saving("$OUT/MFET.dta") 
 }
 
 if `AgeGrp'==1 {
@@ -381,10 +386,10 @@ if `AgeGrp'==1 {
 	collapse (sum) birth (mean) Abort* `cont' idNum `trend', /*
 	*/ by(AgeGroup stateid munid id year month)
 	
-	parmby "reg birth `FE' `cont' Abort*, `se'", by(AgeGroup) /*
+	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(AgeGroup) /*
 	*/ saving("$OUT/MFEAgeG.dta") 
-	parmby "reg birth `FE' `trend' `cont' Abort*, `se'", by(AgeGroup) /*
-	*/ saving("$OUT/MFETAgeG.dta") 
+	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'",  /*
+	*/ by(AgeGroup) saving("$OUT/MFETAgeG.dta") 
 }
 
 
@@ -406,10 +411,10 @@ if `placebo'==1 {
 		replace Placebo`n'       = . if year>=2008
 		replace PlaceboClose`n'  = . if year>=2008
 
-*		parmby "reg birth `FE' `cont' Place*, `se'", by(Age) /*
-*		*/ saving("$P/MFE`n'.dta") 
-		parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
-		*/ saving("$P/MmFET`n'.dta") 
+		parmby "areg birth `FE' `cont' Place*, absorb(idNum) `se'", by(Age) /*
+		*/ saving("$P/MFE`n'.dta") 
+		parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
+		*/ by(Age) saving("$P/MmFET`n'.dta") 
 		drop Place*
 	}
 }
@@ -441,8 +446,8 @@ if `placGrp'==1 {
 			replace Placebo`n'_`m'       = . if year>=2008
 			replace PlaceboClose`n'_`m'  = . if year>=2008
 
-			parmby "reg birth `FE' `trend' `cont' Place*, `se'", by(Age) /*
-			*/ saving("$P/MPlacFET_`n'_`m'.dta")
+			parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
+			*/ by(Age) saving("$P/MPlacFET_`n'_`m'.dta")
 			local files `files' "$P/MPlacFET_`n'_`m'.dta"
 			drop Place*
 		}
