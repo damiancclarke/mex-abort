@@ -100,7 +100,7 @@ local period Month
 
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
 */ totalout subsidies unemployment
-local FE i.idNum i.year#i.month
+local FE i.year#i.month
 local trend StDum*
 local se cluster(idNum)
 
