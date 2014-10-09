@@ -236,7 +236,21 @@ if `covmer'==1 {
 	drop _merge
 	save "$BIR/BirthCovariates", replace	
 
-	*HERE SHOULD MERGE IN POPULATION
+	*THIS NEEDS TO BE TESTED...
+	use "$DAT2/populationStateYearMonth1549.dta", clear
+	gen stateid=""
+	local nn=1
+	foreach SS of local sName {
+		dis "`SS'"
+		replace stateid="`nn'" if stateName==`"`SS'"'
+		local ++nn
+	}
+	foreach num of numlist 1(1)9 {
+		replace stateid="0`num'" if stateid=="`num'"
+	}
+	drop if year<2001|year>2011
+   * NOW SHOULD MERGE IN LONG VERSION OF POP DATA (month) AND THEN CHANGE
+	* SUBSEQUENT MERGES TO 1:1 RATHER THAN 1:M.
 }
 ********************************************************************************
 *** (3) Import births, rename
@@ -301,23 +315,8 @@ if `import'==1 {
 ********************************************************************************
 *** (4) Merge to population data (must rename states from popln to match)
 ********************************************************************************
-*use "$DAT2/populationStateYearMonth1549.dta", clear
-*gen birthStateNum=.
-*local nn=1
 
-*foreach SS of local sName {
-*	dis "`SS'"
-*	replace birthStateNum=`nn' if stateName==`"`SS'"'
-*	local ++nn
-*}
-
-**tostring birthStateNum, gen(nid)
-**gen length=length(nid)
-**gen zero="0" if length==1
-**egen stateid=concat(zero nid)
-**drop nid length zero
-
-**drop if year<2001|year>2011
+**
 **merge m:1 stateid year month using "$BIR/BirthCovariates"
 
 **kill here
