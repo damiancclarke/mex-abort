@@ -91,7 +91,7 @@ local import  0
 local mercov  0
 local newgen  0
 local numreg  0
-local placebo 0
+local placebo 1
 local AgeGrp  1
 local placGrp 0
 
@@ -390,8 +390,6 @@ if `AgeGrp'==1 {
 	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'",  /*
 	*/ by(AgeGroup) saving("$OUT/MFETAgeG.dta") 
 }
-
-
 
 ********************************************************************************
 *** (8) Placebo regressions
