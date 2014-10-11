@@ -367,9 +367,9 @@ if `numreg'==1 {
 	destring id, gen(idNum)
 	
 	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
-	*/ saving("$OUT/MFE.dta") 
+	*/ saving("$OUT/MFE.dta", replace)
 	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
-	*/ saving("$OUT/MFET.dta") 
+	*/ saving("$OUT/MFET.dta", replace)
 }
 
 if `AgeGrp'==1 {
@@ -386,9 +386,9 @@ if `AgeGrp'==1 {
 	*/ by(AgeGroup stateid munid id year month)
 	
 	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(AgeGroup) /*
-	*/ saving("$OUT/MFEAgeG.dta") 
+	*/ saving("$OUT/MFEAgeG.dta", replace) 
 	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'",  /*
-	*/ by(AgeGroup) saving("$OUT/MFETAgeG.dta") 
+	*/ by(AgeGroup) saving("$OUT/MFETAgeG.dta", replace)
 }
 
 ********************************************************************************
@@ -409,9 +409,9 @@ if `placebo'==1 {
 		replace PlaceboClose`n'  = . if year>=2008
 
 		parmby "areg birth `FE' `cont' Place*, absorb(idNum) `se'", by(Age) /*
-		*/ saving("$P/MFE`n'.dta") 
+		*/ saving("$P/MFE`n'.dta", replace) 
 		parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
-		*/ by(Age) saving("$P/MmFET`n'.dta") 
+		*/ by(Age) saving("$P/MmFET`n'.dta", replace) 
 		drop Place*
 	}
 }
@@ -444,7 +444,7 @@ if `placGrp'==1 {
 			replace PlaceboClose`n'_`m'  = . if year>=2008
 
 			parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
-			*/ by(Age) saving("$P/MPlacFET_`n'_`m'.dta")
+			*/ by(Age) saving("$P/MPlacFET_`n'_`m'.dta", replace)
 			local files `files' "$P/MPlacFET_`n'_`m'.dta"
 			drop Place*
 		}
