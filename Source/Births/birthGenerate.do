@@ -72,11 +72,11 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ yucatan zacatecas
 
 
-local covPrep  0
+local covPrep  1
 local import   0
-local mergeCV  0
-local mergeB   0
-local Mdetrend 0
+local mergeCV  1
+local mergeB   1
+local Mdetrend 1
 local stateG   1
 
 ********************************************************************************
@@ -293,7 +293,7 @@ if `mergeB'==1 {
 	gen yearmonth     = year+(month-1)/12
 
 	label var birthStateNum "State identifier (numerical)"
-	label var birthStateNum "Municipal identifier (numerical)"
+	label var birthMunNum   "Municipal identifier (numerical)"
 	label var Age           "Mother's age at birth"
 	label var month         "Month of birth (1-12)"
 	label var year          "Year of birth (2001-2011)"
@@ -365,8 +365,11 @@ if `stateG' {
 	replace bibliotecas=. if bibliotecasMissing==1
 	replace talleres=. if talleresMissing==1
 
-	collapse `cont' year month stateid (sum) birth, /*
-	*/ by(birthStateNum Age yearmonth state)
+	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
+	*/ subsidies unemployment any* adolescentKnows (sum) birth,                 /*
+	*/ by(stateid year month Age) fast
 
-	merge 1:1 using "$DAT2/populationStateYearMonth1549.dta"
+	rename stateid stateNum
+	
+	merge 1:1 stateNum Age month year using "$DAT2/populationStateYearMonth1549.dta"
 }
