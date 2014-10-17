@@ -72,7 +72,9 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ yucatan zacatecas
 
 
-local import 0
+local import  0
+local mergeCV 0
+local mergeB  0
 
 ********************************************************************************
 *** (2) Generate Municipal file
@@ -108,14 +110,14 @@ foreach var of varlist planteles aulas bibliotecas labor talle {
 	replace `var'=subinstr(`var',".","",1)
 	replace `var'="0" if `var'=="ND"
 	destring `var', replace
-	}
+}
 expand 2 if year==2010
 expand 5 if year==2005
 bys year id: gen n=_n
 replace year=2011 if year==2010&n==2
 foreach num of numlist 1(1)5 {
 	replace year=year-`num'+1 if year==2005&n==`num'
-	}
+}
 drop n
 tostring id, gen(nid)
 drop id
@@ -142,7 +144,7 @@ foreach cv in Income Spending {
 	egen id=concat(zero nid)
 	drop nid zero length
 	save "$COV1/`cv'", replace
-	}
+}
 
 *EXPAND TO MONTHS
 foreach set in Doctors EducInf Income Spending {
@@ -152,7 +154,7 @@ foreach set in Doctors EducInf Income Spending {
 	bys id year: gen month=_n
 	drop if month>12
 	save, replace
-	}
+}
 
 foreach ENT of local lName {
 	insheet using "$COV2/`ENT'.csv", comma names clear
@@ -169,11 +171,12 @@ foreach ENT of local lName {
 	replace month=month+6 if trimester=="III"
 	replace month=month+9 if trimester=="IV"
 	save "$COV2/`ENT'", replace
-	}
+}
 clear
+
 foreach ENT of local lName {
 	append using "$COV2/`ENT'"
-	}
+}
 tostring number, gen(id)
 
 gen length=length(id)
@@ -186,20 +189,26 @@ save "$COV2/Labour", replace
 ********************************************************************************
 *** (2b) Merge covariate datasets
 ********************************************************************************
-mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
-*/ "$COV1/Spending", match(year month id) verbose
-keep if _merge_S==3&_merge_I==3&_merge_E==3
-drop _merge*
-gen stateid=substr(id,1,2)
+if `mergeCV'==1 {
+	mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
+	*/ "$COV1/Spending", match(year month id) verbose
+	keep if _merge_S==3&_merge_I==3&_merge_E==3
+	drop _merge*
+	gen stateid=substr(id,1,2)
 
-merge m:1 stateid year month using "$COV2/Labour"
-drop _merge
-save "$BIR/BirthCovariates", replace
+	merge m:1 stateid year month using "$COV2/Labour"
+	drop _merge
+	save "$BIR/BirthCovariates", replace
 
-merge m:1 stateid year using "$COV3/Contraception"
-drop if _merge==2
-drop _merge
-save "$BIR/BirthCovariates", replace
+	merge m:1 stateid year using "$COV3/Contraception"
+	drop if _merge==2
+	drop _merge
+
+   *expand so one cell for each age 15-49 (expensive)
+	expand 35
+	bys id year month: gen Age=_n+14
+	save "$BIR/BirthCovariates", replace
+}
 
 ********************************************************************************
 *** (2c) Import births, rename
@@ -208,19 +217,19 @@ if `import'==1 {
 	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
 		dis "Appending `yr'"
 		append using "$DAT/NACIM`yr'.dta"
-		}
+	}
 
 	foreach v of varlist mun_resid mun_ocurr {
 		replace `v'=. if `v'==999
-		}
+	}
 	foreach v of varlist tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac/*
 	*/ mes_nac dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo hijos_sobr {
 		replace `v'=. if `v'==99
-		}
+	}
 	foreach v of varlist sexo tipo_nac lugar_part q_atendio edociv_mad escol_mad /*
 	*/ escol_pad act_mad act_pad fue_prese {
 		replace `v'=. if `v'==99
-		}
+	}
 	replace ano_nac=. if ano_nac==9999
 
 	gen birth=1 /*if ano_nac==ano_reg*/
@@ -233,11 +242,11 @@ if `import'==1 {
 
 	if `"`period'"'=="Year" {
 		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
-		}
+	}
 	else if `"`period'"'=="Month" {
 		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
 		rename mes_nac month
-		}
+	}
 
 	rename edad_madn Age
 	rename ent_ocurr birthStateNum
@@ -265,46 +274,51 @@ if `import'==1 {
 ********************************************************************************
 *** (2d) Merge with covariates, generate treatments
 ********************************************************************************
-use "$BIR/BirthsMonth", clear
-merge m:1 id year month using "$BIR/BirthCovariates"
-replace birth=0 if _merge==2
-drop _merge
+if `mergeB'==1 {
+	use "$BIR/BirthsMonth", clear
+	drop if Age<=15|Age>49
+   merge 1:1 id year month Age using "$BIR/BirthCovariates"
+	replace birth=0 if _merge==2
 
-gen Abortion      = stateid=="09"&year>2008
-gen AbortionClose = stateid=="15"&year>2008
-gen yearmonth     = year+(month-1)/12
+	dis "note that in 39094 cases, the mother's age of birth isn't recorded"
+	dis "These are lest in the dataset with age recorded as missing."
+	drop _merge
 
-label var birthStateNum "State identifier (numerical)"
-label var birthStateNum "Municipal identifier (numerical)"
-label var Age           "Mother's age at birth"
-label var month         "Month of birth (1-12)"
-label var year          "Year of birth (2001-2011)"
-label var stateid       "State identifier (string)"
-label var munid         "Municipal identifier (string)"
-label var id            "Concatenation of state and municipal id (string)"
-label var state         "State name (in words)"
-label var municip       "Municipality name (in words)"
-label var medicalstaff  "Number of medical staff in the municipality"
-label var MedMissing    "Indicator for missing obs on medical staff"
-label var planteles     "Number of educational establishments in municipality"
-label var aulas         "Number of classrooms in municipality"
-label var bibliotecas   "Number of libraries in municipality"
-label var laboratorios  "Number of laboratories (study) in the municipality"
-label var talleres      "Number of workshops in the municipality"
-label var trimester     "Trimester of the year (I-IV)"
-label var unemployment  "Unemployment rate in the State"
-label var condomFirstTe "% teens reporting using condoms at first intercourse"
-label var condomRecentT "% teens reporting using condoms at recent intercourse"
-label var anyFirstTeen  "% of teens using any contraceptive method"
-label var adolescentKno "Percent of teens reporting knowing any contraceptives"
-label var condomRecent  "% of adults using condoms at recent intercourse"
-label var anyRecent     "% of adults using any contraceptive at recent intercou"
-label var Abortion      "Availability of abortion (1 in DF post reform)"
-label var yearmonth     "Year and month added together (numerical)"
+	gen Abortion      = stateid=="09"&year>2008
+	gen AbortionClose = stateid=="15"&year>2008
+	gen yearmonth     = year+(month-1)/12
 
-label data "Birth data and covariates at level of Municipality*Month*Age"
-save "$BIR/MunicipalBirths.dta", replace
+	label var birthStateNum "State identifier (numerical)"
+	label var birthStateNum "Municipal identifier (numerical)"
+	label var Age           "Mother's age at birth"
+	label var month         "Month of birth (1-12)"
+	label var year          "Year of birth (2001-2011)"
+	label var stateid       "State identifier (string)"
+	label var munid         "Municipal identifier (string)"
+	label var id            "Concatenation of state and municipal id (string)"
+	label var state         "State name (in words)"
+	label var municip       "Municipality name (in words)"
+	label var medicalstaff  "Number of medical staff in the municipality"
+	label var MedMissing    "Indicator for missing obs on medical staff"
+	label var planteles     "Number of educational establishments in municipality"
+	label var aulas         "Number of classrooms in municipality"
+	label var bibliotecas   "Number of libraries in municipality"
+	label var laboratorios  "Number of laboratories (study) in the municipality"
+	label var talleres      "Number of workshops in the municipality"
+	label var trimester     "Trimester of the year (I-IV)"
+	label var unemployment  "Unemployment rate in the State"
+	label var condomFirstTe "% teens reporting using condoms at first intercourse"
+	label var condomRecentT "% teens reporting using condoms at recent intercourse"
+	label var anyFirstTeen  "% of teens using any contraceptive method"
+	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
+	label var condomRecent  "% of adults using condoms at recent intercourse"
+	label var anyRecent     "% of adults using any contraceptive at recent intercou"
+	label var Abortion      "Availability of abortion (1 in DF post reform)"
+	label var yearmonth     "Year and month added together (numerical)"
 
+	label data "Birth data and covariates at level of Municipality*Month*Age"
+	save "$BIR/MunicipalBirths.dta", replace
+}
 ********************************************************************************
 *** (3) Deseason (de-month) municipal file
 ********************************************************************************
