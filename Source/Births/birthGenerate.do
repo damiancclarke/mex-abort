@@ -57,7 +57,7 @@ global COV3 "~/investigacion/2014/MexAbort/Data/Contracep"
 log using "$LOG/birthGenerate.txt", text replace
 
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
-*/ totalout subsidies unemployment
+*/ totalout subsidies unemployment condom* any* adolescentKnows 
 
 foreach uswado in mergemany {
 	cap which `uswado'
@@ -72,13 +72,17 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ yucatan zacatecas
 
 
-local import  0
-local mergeCV 0
-local mergeB  0
+local covPrep  0
+local import   0
+local mergeCV  0
+local mergeB   0
+local Mdetrend 0
+local stateG   1
 
 ********************************************************************************
 *** (2) Generate Municipal file
 ********************************************************************************
+if `covPrep'==1 {
 insheet using "$COV1/Doctors/Doctors.csv", tab names
 gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
 replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
@@ -185,7 +189,7 @@ egen stateid=concat(zero id)
 drop id zero length number
 
 save "$COV2/Labour", replace
-
+}
 ********************************************************************************
 *** (2b) Merge covariate datasets
 ********************************************************************************
@@ -324,27 +328,45 @@ if `mergeB'==1 {
 
 ********************************************************************************
 *** (3) Deseason (de-month) municipal file
+*** THIS NEEDS TO BE RE-DONE BY MUNICIPALITY ETC...
 ********************************************************************************
-use "$BIR/MunicipalBirths.dta"
-tab month, gen(_Month)
-bys id Age: gen trend=_n
+if `Mdetrend'==1 {
+	use "$BIR/MunicipalBirths.dta"
+	drop if year>=2010
+	tab month, gen(_Month)
+	bys id Age: gen trend=_n
 
-gen birthdetrend=.
-drop _Month12
+	gen birthdetrend=.
+	drop _Month12
 
-foreach A of numlist 16(1)49 {
-	dis "Detrending Age==`A'"
+	foreach A of numlist 16(1)49 {
+		dis "Detrending Age==`A'"
 
-	reg birth _Month* trend if Age==`A'
-	predict resid if Age==`A', r 
-	sum birth if Age==`A'
-	replace birthdetrend=`r(mean)'+resid if Age==`A'
+		reg birth _Month* trend if Age==`A'
+		predict resid if Age==`A', r 
+		sum birth if Age==`A'
+		replace birthdetrend=`r(mean)'+resid if Age==`A'
 
-	drop resid
+		drop resid
+	}
+	save "$BIR/MunicipalBirths_deseason.dta", replace
 }
-
-save "$BIR/MunicipalBirths_deseason.dta", replace
 
 ********************************************************************************
 *** (4) Generate State file
 ********************************************************************************
+if `stateG' {
+	use "$BIR/MunicipalBirths.dta", clear
+	
+	replace medicalstaff=. if MedMissing==1
+	replace planteles=. if plantelesMissing==1
+	replace laboratorios=. if laboratoriosMissing==1
+	replace aulas=. if aulasMissing==1
+	replace bibliotecas=. if bibliotecasMissing==1
+	replace talleres=. if talleresMissing==1
+
+	collapse `cont' year month state (sum) birth, /*
+	*/ by(birthStateNum Age yearmonth stateid)
+
+	merge 1:1 using "$DAT2/populationStateYearMonth1549.dta"
+}
