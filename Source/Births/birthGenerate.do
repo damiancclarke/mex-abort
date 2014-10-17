@@ -9,8 +9,8 @@ lowing four files:
 
 	> MunicipalBirths.dta
 	> StateBirths.dta
-	> MunicipalBirths_smoothed.dta
-	> StateBirths_smoothed.dta
+	> MunicipalBirths_deseason.dta
+	> StateBirths_deseason.dta
 
 where the difference between each file is the level of aggregation (State is hi-
 gher than Municipal), and whether or not births are deseasoned to remove regular 
@@ -276,7 +276,7 @@ if `import'==1 {
 ********************************************************************************
 if `mergeB'==1 {
 	use "$BIR/BirthsMonth", clear
-	drop if Age<=15|Age>49
+	drop if Age<15|(Age>49&Age!=.)
    merge 1:1 id year month Age using "$BIR/BirthCovariates"
 	replace birth=0 if _merge==2
 
@@ -317,8 +317,34 @@ if `mergeB'==1 {
 	label var yearmonth     "Year and month added together (numerical)"
 
 	label data "Birth data and covariates at level of Municipality*Month*Age"
+	drop if year>2010
+	
 	save "$BIR/MunicipalBirths.dta", replace
 }
+
 ********************************************************************************
 *** (3) Deseason (de-month) municipal file
+********************************************************************************
+use "$BIR/MunicipalBirths.dta"
+tab month, gen(_Month)
+bys id Age: gen trend=_n
+
+gen birthdetrend=.
+drop _Month12
+
+foreach A of numlist 16(1)49 {
+	dis "Detrending Age==`A'"
+
+	reg birth _Month* trend if Age==`A'
+	predict resid if Age==`A', r 
+	sum birth if Age==`A'
+	replace birthdetrend=`r(mean)'+resid if Age==`A'
+
+	drop resid
+}
+
+save "$BIR/MunicipalBirths_deseason.dta", replace
+
+********************************************************************************
+*** (4) Generate State file
 ********************************************************************************
