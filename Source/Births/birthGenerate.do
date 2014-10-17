@@ -365,8 +365,8 @@ if `stateG' {
 	replace bibliotecas=. if bibliotecasMissing==1
 	replace talleres=. if talleresMissing==1
 
-	collapse `cont' year month state (sum) birth, /*
-	*/ by(birthStateNum Age yearmonth stateid)
+	collapse `cont' year month stateid (sum) birth, /*
+	*/ by(birthStateNum Age yearmonth state)
 
 	merge 1:1 using "$DAT2/populationStateYearMonth1549.dta"
 }
