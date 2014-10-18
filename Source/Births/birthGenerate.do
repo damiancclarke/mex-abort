@@ -72,13 +72,14 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ yucatan zacatecas
 
 
-local covPrep  1
-local import   0
-local mergeCV  1
-local mergeB   1
-local Mdetrend 1
-local stateG   1
+local covPrep  0
+local import   1
+local mergeCV  0
+local mergeB   0
+local Mdetrend 0
+local stateG   0
 
+local sameyear 1
 ********************************************************************************
 *** (2) Generate Municipal file
 ********************************************************************************
@@ -243,7 +244,8 @@ if `import'==1 {
 	drop if mun_ocurr==.
 	drop if mes_nac==.
 
-
+	if `sameyear'==1 keep if ano_nac==20`yr'
+	
 	if `"`period'"'=="Year" {
 		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
 	}
@@ -271,7 +273,8 @@ if `import'==1 {
 	drop length zero munN
 
 	egen id=concat(stateid munid)
-	save "$BIR/BirthsMonth", replace
+	if `sameyear'==1 save "$BIR/BirthsMonth_same"
+	if `sameyear'==0 save "$BIR/BirthsMonth", replace
 }
 
 
@@ -373,4 +376,8 @@ if `stateG' {
 	
 	merge 1:1 stateNum Age month year using "$DAT2/populationStateYearMonth1549.dta"
 	drop if year<2001|year>2010&year!=.
+	drop _merge
+
+	gen DF=stateNum=="32"
+	save "$BIR/StateBirths.dta", replace
 }
