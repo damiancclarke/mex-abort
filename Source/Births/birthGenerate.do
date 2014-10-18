@@ -372,4 +372,5 @@ if `stateG' {
 	rename stateid stateNum
 	
 	merge 1:1 stateNum Age month year using "$DAT2/populationStateYearMonth1549.dta"
+	drop if year<2001|year>2010&year!=.
 }
