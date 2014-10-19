@@ -16,6 +16,15 @@ where the difference between each file is the level of aggregation (State is hi-
 gher than Municipal), and whether or not births are deseasoned to remove regular 
 monthly variation.
 
+There is also another version which can be run if the local `sameyear' is set to
+1. The sameyear version produces the same output, but only includes births regi-
+stered in the same year, and the year following the year of birth. The reason to
+do this is that we are concerned that for later year births, some may be unregi-
+stered given that we only have files up until 2012. By restricting to only incl-
+ude births registered in the same year and the year following the birth, this r-
+esolves the issue, presuming that parental birth registering patterns do not ch-
+ange a lot over time.
+
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
 ly the following data is required:
@@ -25,7 +34,7 @@ ly the following data is required:
    > Spending.csv: spending for each municipality over time
    > Employment figure from each state from INEGI (1 sheet per state)
    > NACIM01.dta-NACIM12.dta: raw birth records from INEGI
-	 > populationStateYearMonth1549.dta: total population at a state level by time
+   > populationStateYearMonth1549.dta: total population at a state level by time
 
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
@@ -84,8 +93,11 @@ local mergeCV  0
 local mergeB   0
 local Mdetrend 1
 local stateG   0
+local Sdetrend 1
 
 local sameyear 0
+if `sameyear'==1 local app sameyear
+
 ********************************************************************************
 *** (2) Generate Municipal file
 ********************************************************************************
@@ -250,7 +262,7 @@ if `import'==1 {
 	drop if mun_ocurr==.
 	drop if mes_nac==.
 
-	if `sameyear'==1 keep if ano_nac==20`yr'
+	if `sameyear'==1 keep if ano_nac==ano_reg|ano_nac==ano_reg-1
 	
 	if `"`period'"'=="Year" {
 		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
@@ -279,8 +291,7 @@ if `import'==1 {
 	drop length zero munN
 
 	egen id=concat(stateid munid)
-	if `sameyear'==1 save "$BIR/BirthsMonth_same"
-	if `sameyear'==0 save "$BIR/BirthsMonth", replace
+	save "$BIR/BirthsMonth`app'", replace
 }
 
 
@@ -288,7 +299,7 @@ if `import'==1 {
 *** (2d) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-	use "$BIR/BirthsMonth", clear
+	use "$BIR/BirthsMonth`app'", clear
 	drop if Age<15|(Age>49&Age!=.)
    merge 1:1 id year month Age using "$BIR/BirthCovariates"
 	replace birth=0 if _merge==2
@@ -332,12 +343,11 @@ if `mergeB'==1 {
 	label data "Birth data and covariates at level of Municipality*Month*Age"
 	drop if year>2010
 	
-	save "$BIR/MunicipalBirths.dta", replace
+	save "$BIR/MunicipalBirths`app'.dta", replace
 }
 
 ********************************************************************************
 *** (3) Deseason (de-month) municipal file
-*** THIS NEEDS TO BE RE-DONE BY MUNICIPALITY ETC...
 ********************************************************************************
 if `Mdetrend'==1 {
 	use "$BIR/MunicipalBirths.dta"
@@ -361,14 +371,14 @@ if `Mdetrend'==1 {
 			drop resid
 		}
 	}
-	save "$BIR/MunicipalBirths_deseason.dta", replace
+	save "$BIR/MunicipalBirths_deseason`app'.dta", replace
 }
 
 ********************************************************************************
 *** (4) Generate State file
 ********************************************************************************
 if `stateG' {
-	use "$BIR/MunicipalBirths.dta", clear
+	use "$BIR/MunicipalBirths`app'.dta", clear
 
 	replace medicalstaff=. if MedMissing==1
 	replace planteles=. if plantelesMissing==1
@@ -430,5 +440,39 @@ if `stateG' {
 
 
 	label data "Birth data and covariates at level of State*Month*Age"
-	save "$BIR/StateBirths.dta", replace
+	save "$BIR/StateBirths`app'.dta", replace
 }
+
+********************************************************************************
+*** (5) Deseason (de-month) State file
+********************************************************************************
+if `Mdetrend'==1 {
+	use "$BIR/StateBirths`app'.dta"
+	drop if year>=2010
+	tab month, gen(_Month)
+	bys stateid Age: gen trend=_n
+
+	gen birthdetrend=.
+	drop _Month12
+
+	levelsof stateid, local(SSid)
+	foreach A of numlist 16(1)49 {
+		foreach S of local SSid {
+			dis "Detrending Age==`A' in State `S'"
+
+			reg birth _Month* trend if Age==`A'&stateid=="`S'"
+			predict resid if Age==`A'&stateid=="`S'", r 
+			sum birth if Age==`A'&stateid=="`S'"
+			replace birthdetrend=`r(mean)'+resid if Age==`A'&stateid=="`S'"
+
+			drop resid
+		}
+	}
+	save "$BIR/StateBirths_deseason`app'.dta", replace
+}
+
+
+********************************************************************************
+*** (X) Close
+********************************************************************************
+log close
