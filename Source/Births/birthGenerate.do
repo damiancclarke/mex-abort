@@ -70,10 +70,14 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
 */ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
 */ yucatan zacatecas
-
+local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
+*/ Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      /*
+*/ Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      /*
+*/ Puebla Guanajuato Nayarit Tabasco Mexico Hidalgo Queretaro Colima          /*
+*/ Aguascalientes Morelos Tlaxcala DistritoFederal
 
 local covPrep  0
-local import   1
+local import   0
 local mergeCV  0
 local mergeB   0
 local Mdetrend 0
@@ -360,7 +364,7 @@ if `Mdetrend'==1 {
 ********************************************************************************
 if `stateG' {
 	use "$BIR/MunicipalBirths.dta", clear
-	
+
 	replace medicalstaff=. if MedMissing==1
 	replace planteles=. if plantelesMissing==1
 	replace laboratorios=. if laboratoriosMissing==1
@@ -372,12 +376,50 @@ if `stateG' {
 	*/ subsidies unemployment any* adolescentKnows (sum) birth,                 /*
 	*/ by(stateid year month Age) fast
 
-	rename stateid stateNum
+	gen MedMissing         = medicalstaff ==.
+	gen plantelesMissing   = planteles    ==.
+	gen aulasMissing       = aulas        ==.
+	gen bibliotecasMissing = bibliotecas  ==.
 	
-	merge 1:1 stateNum Age month year using "$DAT2/populationStateYearMonth1549.dta"
+	replace medicalstaff  =0 if medicalstaff ==.
+	replace planteles     =0 if planteles    ==.
+	replace aulas         =0 if planteles    ==.
+	replace bibliotecas   =0 if bibliotecas  ==.	
+	
+	rename stateid
+	gen stateName=""
+	tokenize `popName'
+	foreach num of numlist 1(1)32 {
+		if `num'<10 {
+			replace stateName=="``num''" if stateid=="0`num'"
+		}
+		if num >=10 {
+			replace stateName=="``num''" if stateid=="`num'"
+		}
+	}
+
+	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
 	drop if year<2001|year>2010&year!=.
 	drop _merge
 
 	gen DF=stateNum=="32"
+	
+	label var medicalstaff  "Number of medical staff in the state (average)"
+	label var MedMissing    "Indicator for missing obs on medical staff"
+	label var planteles     "Number of educational establishments in municipality"
+	label var aulas         "Number of classrooms in municipality"
+	label var bibliotecas   "Number of libraries in municipality"
+	label var unemployment  "Unemployment rate in the State"
+	label var condomFirstTe "% teens reporting using condoms at first intercourse"
+	label var condomRecentT "% teens reporting using condoms at recent intercourse"
+	label var anyFirstTeen  "% of teens using any contraceptive method"
+	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
+	label var condomRecent  "% of adults using condoms at recent intercourse"
+	label var anyRecent     "% of adults using any contraceptive at recent intercou"
+	label var Abortion      "Availability of abortion (1 in DF post reform)"
+	label var yearmonth     "Year and month added together (numerical)"
+
+
+	label data "Birth data and covariates at level of State*Month*Age"
 	save "$BIR/StateBirths.dta", replace
 }
