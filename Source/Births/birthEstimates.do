@@ -1,11 +1,10 @@
-/* birthEstimates v1.00              DCC/HM                yyyy-mm-dd:2014-09-15
+/* birthEstimates v2.00              DCC/HM                yyyy-mm-dd:2014-09-15
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
-This file combines birth data with covariates produced from the script municipP-
-rep.py and runs difference in difference regressions examining the effect of the
-Mexico April 2007 abortion reform on births.  The regression takes the following
-format:
+This file uses data generated in the file birthGenerate.do, and runs difference-
+in-differences regressions examining the effect of the Mexico April 2007 aborti-
+on reform on births.  The regression takes the following format:
 
 births_jst = a + b*f(t) + c*loc_js + d*reform + e*X_js + f*X_s + u
 
@@ -17,6 +16,9 @@ births_jst = a + b*f(t) + c*loc_js + d*reform + e*X_js + f*X_s + u
     X_js are municipality-level time varying controls, and
     X_s are state-level time varying controls
 
+Descriptive statistics are presented including plots of births and birth rates
+over time between DF and other municipalities/states.
+
 We also examine spillover effects by looking at regions close to the reform. Th-
 is consists (for now) of controlling for all of Mexico as the close region, how-
 ever going forward will be determined much more precisely based on distance and
@@ -27,19 +29,13 @@ re run.  This consists of using the entire pre-reform period, and comparing the
 reform regions with the non-reform regions to test the parallel trends assumpti-
 ons required for consistent identification.
 
-Currently this file only works at the level of month*municipality.  Going forwa-
-rd this will be generalised for month*state.
-
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
-ly the following data is required:
-   > Doctors.csv: number of medical staff per municipality over time
-   > EducInf.csv: investment in infrastructure over time
-   > Income.csv: income for each municipality over time
-   > Spending.csv: spending for each municipality over time
-   > Employment figure from each state from INEGI (1 sheet per state)
-   > NACIM01.dta-NACIM12.dta: raw birth records from INEGI
-
+ly the following data is used:
+   > MunicipalBirths.dta 
+   > StateBirths.dta 
+   >
+   >
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
 
@@ -47,6 +43,7 @@ ly the following data is required:
 Past major versions
    > v0.00: Ran logit of birth versus no birth.  This only works at state level
    > v1.00: Ran number of births at municipal level (OLS)
+   > v2.00: Remove generating code and just run regressions and descriptives
 
 */
 
@@ -59,17 +56,13 @@ set matsize 10000
 ********************************************************************************
 *** (1) Globals and locals
 ********************************************************************************
-global DAT  "~/database/MexDemografia/Natalidades"
-global DAT2 "~/investigacion/2014/MexAbort/Data/Population"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
-global OUT  "~/investigacion/2014/MexAbort/Results/Births"
+global REG  "~/investigacion/2014/MexAbort/Results/Births/Regressions"
 global LOG  "~/investigacion/2014/MexAbort/Log"
-global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
-global COV2 "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
-global COV3 "~/investigacion/2014/MexAbort/Data/Contracep"
+global GRA  "~/investigacion/2014/MexAbort/Results/Births/Graphs"
 
-cap mkdir $OUT
-cap mkdir $LOG
+cap mkdir $REG
+cap mkdir $GRA
 log using $LOG/birthEstimates.txt, text replace
 
 local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
@@ -85,18 +78,12 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */	yucatan zacatecas
 
 
-local covars  0
-local covmer  0
-local import  0
-local mercov  0
+local desc    1
 local newgen  0
 local numreg  0
-local placebo 1
-local AgeGrp  1
+local placebo 0
+local AgeGrp  0
 local placGrp 0
-
-local period Month
-*local period Year
 
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
 */ totalout subsidies unemployment
@@ -106,239 +93,48 @@ local se cluster(idNum)
 
 
 ********************************************************************************
-*** (2a) Import covariate data (previous running of Python script)
+*** (2) Descriptive graphs
 ********************************************************************************
-if `covars'==1 {
-	insheet using "$COV1/Doctors/Doctors.csv", tab names
-	gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
-	replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
-	destring medicalstaff, replace
-	
-	expand 2 if year==2010
-	expand 5 if year==2005
-	bys year clave: gen n=_n
-	replace year=2011 if year==2010&n==2
-	foreach num of numlist 1(1)5 {
-		replace year=year-`num'+1 if year==2005&n==`num'
-	}
-	drop n
-	rename clave id
-	rename estado state
-	rename municipio municip
-	tostring id, gen(nid)
-	drop id
-	
-	gen length=length(nid)
-	gen zero="0" if length==4
-	egen id=concat(zero nid)
-	drop nid zero length
-	save "$COV1/Doctors", replace
+if `desc'==1 {
+	use "$BIR/StateBirths"
+	collapse birthrate (sum) birth, by(DF monthyear Age)
 
-	insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
-	foreach var of varlist planteles aulas bibliotecas labor talle {
-		gen `var'Missing=`var'=="ND"
-		replace `var'=subinstr(`var',".","",1)
-		replace `var'="0" if `var'=="ND"
-		destring `var', replace
-	}
-	expand 2 if year==2010
-	expand 5 if year==2005
-	bys year id: gen n=_n
-	replace year=2011 if year==2010&n==2
-	foreach num of numlist 1(1)5 {
-		replace year=year-`num'+1 if year==2005&n==`num'
-	}	
-	drop n
-	tostring id, gen(nid)
-	drop id
-
-	gen length=length(nid)
-	gen zero="0" if length==4
-	egen id=concat(zero nid)
-	drop nid zero length
-	save "$COV1/EducInf", replace
-
-	foreach cv in Income Spending {
-		insheet using "$COV1/`cv'/`cv'.csv", comma names clear
-		drop if year<2001
-		expand 2 if year==2010
-		bys year id: gen n=_n
-		replace year=2011 if year==2010&n==2
-		drop n
-		cap tostring id, gen(nid)
-		cap gen nid=id
-		drop id
-
-		gen length=length(nid)
-		gen zero="0" if length==4
-		egen id=concat(zero nid)
-		drop nid zero length
-		save "$COV1/`cv'", replace
-	}
-	
-	*EXPAND TO MONTHS
-	foreach set in Doctors EducInf Income Spending {
-		use "$COV1/`set'"
-		drop if id==""
-		expand 12
-		bys id year: gen month=_n
-		drop if month>12
-		save, replace
+	foreach age of numlist 15(1)49 {
+		dis "Graphing for Age `age'"
+		twoway line birthrate monthyear if DF==1&Age==`age'              ///
+	  	  ||   line birthrate monthyear if DF==0&Age==`age', xline(2008) ///
+		  legend(label(1 "DF") label(2 "Not DF")) title("Birthrate for Age `age'")
+		graph export "$GRA/births`age'.eps", as(eps) replace
 	}
 
-	foreach ENT of local lName {
-		insheet using "$COV2/`ENT'.csv", comma names clear
-		keep state number year trimeter desocup dsea
-		drop if year<2001|year>2011
-		rename trimeter trimester
-		rename desocup unemployment
-		rename dsea deseasonUnemployment
-		destring unemp, replace
-		destring desea, replace
-		expand 3
-		bys state year trimester: gen month=_n
-		replace month=month+3 if trimester=="II"
-		replace month=month+6 if trimester=="III"
-		replace month=month+9 if trimester=="IV"
-		save "$COV2/`ENT'", replace
+	use "$BIR/StateBirths"
+	gen ageGroup=.
+	foreach num of numlist 1(1)7 {
+		local lb=10+`num'*5
+		local ub=`lb'+5
+		dis "Age Group `num' is between `lb' and `ub'"
+		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
 	}
-	clear
-	foreach ENT of local lName {
-		append using "$COV2/`ENT'"
+	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+	label values ageGroup a
+
+	collapse birthrate (sum) birth, by(DF monthyear ageGroup)
+
+	foreach ageG of numlist 1(1)7 {
+		local lb=10+`num'*5
+		local ub=`lb'+5
+		dis "Graphing for AgeGroup `lb' to `ub'"
+		twoway line birthrate monthyear if DF==1&ageGroup==`ageG'              ///
+	  	  ||   line birthrate monthyear if DF==0&ageGroup==`ageG', xline(2008) ///
+		  legend(label(1 "DF") label(2 "Not DF"))                              ///
+		  title("Birthrate for Age Group `lb' to `ub'")
+		graph export "$GRA/Groupbirths`lb'-`ub'.eps", as(eps) replace
 	}
-	tostring number, gen(id)
-
-	gen length=length(id)
-	gen zero="0" if length==1
-	egen stateid=concat(zero id)
-	drop id zero length number
 
 
-	save "$COV2/Labour", replace
 }
 
-********************************************************************************
-*** (2b) Merge covariate datasets
-********************************************************************************
-if `covmer'==1 {
-	mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
-	*/ "$COV1/Spending", match(year month id) verbose
-	keep if _merge_S==3&_merge_I==3&_merge_E==3
-	drop _merge*
-	gen stateid=substr(id,1,2)
-	
-	merge m:1 stateid year month using "$COV2/Labour"
-	drop _merge
-	save "$BIR/BirthCovariates", replace
-
-	merge m:1 stateid year using "$COV3/Contraception"
-	drop if _merge==2
-	drop _merge
-	save "$BIR/BirthCovariates", replace	
-
-	*THIS NEEDS TO BE TESTED...
-	use "$DAT2/populationStateYearMonth1549.dta", clear
-	gen stateid=""
-	local nn=1
-	foreach SS of local sName {
-		dis "`SS'"
-		replace stateid="`nn'" if stateName==`"`SS'"'
-		local ++nn
-	}
-	foreach num of numlist 1(1)9 {
-		replace stateid="0`num'" if stateid=="`num'"
-	}
-	drop if year<2001|year>2011
-   * NOW SHOULD MERGE IN LONG VERSION OF POP DATA (month) AND THEN CHANGE
-	* SUBSEQUENT MERGES TO 1:1 RATHER THAN 1:M.
-}
-********************************************************************************
-*** (3) Import births, rename
-********************************************************************************
-if `import'==1 {
-	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
-		dis "Appending `yr'"
-		append using "$DAT/NACIM`yr'.dta"
-	}
-	
-	foreach v of varlist mun_resid mun_ocurr {
-		replace `v'=. if `v'==999
-	}
-	foreach v of varlist tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac/*
-   */ mes_nac dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo hijos_sobr {
-		replace `v'=. if `v'==99
-	}
-	foreach v of varlist sexo tipo_nac lugar_part q_atendio edociv_mad escol_mad /*
-	*/ escol_pad act_mad act_pad fue_prese {
-		replace `v'=. if `v'==99
-	}
-	replace ano_nac=. if ano_nac==9999
-
-	gen birth=1 /*if ano_nac==ano_reg*/
-	keep if ano_nac>=2001&ano_nac<2012
-
-
-	drop if mun_ocurr==.
-	drop if mes_nac==.
-	
-	
-	if `"`period'"'=="Year" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
-	}
-	else if `"`period'"'=="Month" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
-		rename mes_nac month
-	}
-	
-	rename edad_madn Age
-	rename ent_ocurr birthStateNum
-	rename mun_ocurr birthMunNum
-	rename ano_nac year
-
-	tostring birthStateNum, gen(entN)
-	gen length=length(entN)
-	gen zero="0" if length==1
-	egen stateid=concat(zero entN)
-	drop length zero entN
-
-	tostring birthMunNum, gen(munN)
-	gen length=length(munN)
-	gen zero="0" if length==2
-	replace zero="00" if length==1
-	egen munid=concat(zero munN)
-	drop length zero munN
-
-	egen id=concat(stateid munid)
-	save "$BIR/Births`period'", replace
-}
-
-********************************************************************************
-*** (4) Merge to population data (must rename states from popln to match)
-********************************************************************************
-
-**
-**merge m:1 stateid year month using "$BIR/BirthCovariates"
-
-**kill here
-
-
-*merge 1:m birthStateNum Age year month using "$BIR/BirthsMonth" 
-*drop if Age<15|Age>49
-
-
-*keep if _merge==3
-*drop _merge
-
-********************************************************************************
-*** (5) Merge to covariates
-********************************************************************************
-if `mercov'==1 {
-	use "$BIR/BirthsMonth", clear
-	merge m:1 id year month using "$BIR/BirthCovariates"
-	replace birth=0 if _merge==2
-	drop _merge
-}
-
+exit
 ********************************************************************************
 *** (6) Generate treatment and trends
 ********************************************************************************
