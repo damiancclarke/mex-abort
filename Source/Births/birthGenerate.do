@@ -81,9 +81,9 @@ local import   0
 local mergeCV  0
 local mergeB   0
 local Mdetrend 0
-local stateG   0
+local stateG   1
 
-local sameyear 1
+local sameyear 0
 ********************************************************************************
 *** (2) Generate Municipal file
 ********************************************************************************
@@ -386,7 +386,6 @@ if `stateG' {
 	replace aulas         =0 if planteles    ==.
 	replace bibliotecas   =0 if bibliotecas  ==.	
 	
-	rename stateid
 	gen stateName=""
 	tokenize `popName'
 	foreach num of numlist 1(1)32 {
