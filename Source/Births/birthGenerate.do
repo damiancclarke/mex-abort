@@ -23,7 +23,8 @@ do this is that we are concerned that for later year births, some may be unregi-
 stered given that we only have files up until 2012. By restricting to only incl-
 ude births registered in the same year and the year following the birth, this r-
 esolves the issue, presuming that parental birth registering patterns do not ch-
-ange a lot over time.
+ange over time.  If this local is set, the files will be produced as above, how-
+ever will have "Sameyear" at the end of each name.
 
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
@@ -96,7 +97,7 @@ local stateG   0
 local Sdetrend 1
 
 local sameyear 0
-if `sameyear'==1 local app sameyear
+if `sameyear'==1 local app Sameyear
 
 ********************************************************************************
 *** (2) Generate Municipal file
@@ -350,7 +351,7 @@ if `mergeB'==1 {
 *** (3) Deseason (de-month) municipal file
 ********************************************************************************
 if `Mdetrend'==1 {
-	use "$BIR/MunicipalBirths.dta"
+	use "$BIR/MunicipalBirths`app'.dta"
 	drop if year>=2010
 	tab month, gen(_Month)
 	bys id Age: gen trend=_n
