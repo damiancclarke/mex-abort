@@ -97,17 +97,20 @@ local se cluster(idNum)
 ********************************************************************************
 if `desc'==1 {
 	use "$BIR/StateBirths"
-	collapse birthrate (sum) birth, by(DF monthyear Age)
+	keep if yearmonth<2010.8
+	collapse birthrate (sum) birth, by(DF yearmonth Age)
 
 	foreach age of numlist 15(1)49 {
 		dis "Graphing for Age `age'"
-		twoway line birthrate monthyear if DF==1&Age==`age'              ///
-	  	  ||   line birthrate monthyear if DF==0&Age==`age', xline(2008) ///
-		  legend(label(1 "DF") label(2 "Not DF")) title("Birthrate for Age `age'")
+		twoway line birthrate yearmonth if DF==1&Age==`age', scheme(s1color) ///
+	  	  ||   line birthrate yearmonth if DF==0&Age==`age', xline(2008)     ///
+		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))  ///
+		  title("Birthrate for Age `age'")
 		graph export "$GRA/births`age'.eps", as(eps) replace
 	}
 
-	use "$BIR/StateBirths"
+	use "$BIR/StateBirths", clear
+	keep if yearmonth<2010.8
 	gen ageGroup=.
 	foreach num of numlist 1(1)7 {
 		local lb=10+`num'*5
@@ -118,20 +121,18 @@ if `desc'==1 {
 	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
 	label values ageGroup a
 
-	collapse birthrate (sum) birth, by(DF monthyear ageGroup)
+	collapse birthrate (sum) birth, by(DF yearmonth ageGroup)
 
 	foreach ageG of numlist 1(1)7 {
-		local lb=10+`num'*5
+		local lb=10+`ageG'*5
 		local ub=`lb'+5
 		dis "Graphing for AgeGroup `lb' to `ub'"
-		twoway line birthrate monthyear if DF==1&ageGroup==`ageG'              ///
-	  	  ||   line birthrate monthyear if DF==0&ageGroup==`ageG', xline(2008) ///
-		  legend(label(1 "DF") label(2 "Not DF"))                              ///
+		twoway line birthrate yearmonth if DF==1&ageGroup==`ageG', xline(2008)   ///
+	  	  || line birthrate yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
+		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
 		  title("Birthrate for Age Group `lb' to `ub'")
 		graph export "$GRA/Groupbirths`lb'-`ub'.eps", as(eps) replace
 	}
-
-
 }
 
 exit
