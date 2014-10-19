@@ -376,7 +376,7 @@ if `stateG' {
 
 	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
 	*/ subsidies unemployment any* adolescentKnows (sum) birth,                 /*
-	*/ by(stateid year month Age) fast
+	*/ by(stateid state year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
 	gen plantelesMissing   = planteles    ==.
@@ -390,15 +390,16 @@ if `stateG' {
 	
 	gen stateName=""
 	tokenize `popName'
+	local i=1
 	foreach num of numlist `popNum' {
 		if `num'<10 {
-			replace stateName="``num''" if stateid=="0`num'"
+			replace stateName="``i''" if stateid=="0`num'"
 		}
 		if `num' >=10 {
-			replace stateName="``num''" if stateid=="`num'"
+			replace stateName="``i''" if stateid=="`num'"
 		}
+		local ++i
 	}
-
 	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
 	drop if year<2001|year>2010&year!=.
 	drop _merge
