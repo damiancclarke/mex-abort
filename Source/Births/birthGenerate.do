@@ -75,6 +75,8 @@ local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 */ Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      /*
 */ Puebla Guanajuato Nayarit Tabasco Mexico Hidalgo Queretaro Colima          /*
 */ Aguascalientes Morelos Tlaxcala DistritoFederal
+local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
+*/ 15 13 22 6 1 17 29 9
 
 local covPrep  0
 local import   0
@@ -388,21 +390,26 @@ if `stateG' {
 	
 	gen stateName=""
 	tokenize `popName'
-	foreach num of numlist 1(1)32 {
+	foreach num of numlist `popNum' {
 		if `num'<10 {
-			replace stateName=="``num''" if stateid=="0`num'"
+			replace stateName="``num''" if stateid=="0`num'"
 		}
-		if num >=10 {
-			replace stateName=="``num''" if stateid=="`num'"
+		if `num' >=10 {
+			replace stateName="``num''" if stateid=="`num'"
 		}
 	}
 
 	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
 	drop if year<2001|year>2010&year!=.
 	drop _merge
-
-	gen DF=stateNum=="32"
 	
+	gen yearmonth= year + (month-1)/12
+	gen birthrate  = birth/imputePop
+	gen DF=stateNum=="32"
+
+	label var DF            "Indicator for Mexico D.F."
+	label var stateName     "State name from population data"
+	label var stateNum      "State number (string) from population data"	
 	label var medicalstaff  "Number of medical staff in the state (average)"
 	label var MedMissing    "Indicator for missing obs on medical staff"
 	label var planteles     "Number of educational establishments in municipality"
@@ -415,7 +422,6 @@ if `stateG' {
 	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
 	label var condomRecent  "% of adults using condoms at recent intercourse"
 	label var anyRecent     "% of adults using any contraceptive at recent intercou"
-	label var Abortion      "Availability of abortion (1 in DF post reform)"
 	label var yearmonth     "Year and month added together (numerical)"
 
 
