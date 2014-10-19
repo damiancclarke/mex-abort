@@ -97,7 +97,7 @@ local se cluster(idNum)
 ********************************************************************************
 if `desc'==1 {
 	use "$BIR/StateBirths"
-	keep if yearmonth<2010.8
+	keep if yearmonth<2010.7
 	collapse birthrate (sum) birth, by(DF yearmonth Age)
 
 	foreach age of numlist 15(1)49 {
@@ -110,7 +110,7 @@ if `desc'==1 {
 	}
 
 	use "$BIR/StateBirths", clear
-	keep if yearmonth<2010.8
+	keep if yearmonth<2010.7
 	gen ageGroup=.
 	foreach num of numlist 1(1)7 {
 		local lb=10+`num'*5

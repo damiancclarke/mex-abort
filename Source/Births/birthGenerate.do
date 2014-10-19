@@ -92,8 +92,8 @@ local covPrep  0
 local import   0
 local mergeCV  0
 local mergeB   0
-local Mdetrend 1
-local stateG   0
+local Mdetrend 0
+local stateG   1
 local Sdetrend 1
 
 local sameyear 0
@@ -360,8 +360,8 @@ if `Mdetrend'==1 {
 	drop _Month12
 
 	levelsof id, local(SSid)
-	foreach A of numlist 16(1)49 {
-		foreach S of local SSid {
+	foreach S of local SSid {
+		foreach A of numlist 16(1)49 {
 			dis "Detrending Age==`A' in Municipality `S'"
 
 			reg birth _Month* trend if Age==`A'&id=="`S'"
@@ -447,7 +447,7 @@ if `stateG' {
 ********************************************************************************
 *** (5) Deseason (de-month) State file
 ********************************************************************************
-if `Mdetrend'==1 {
+if `Sdetrend'==1 {
 	use "$BIR/StateBirths`app'.dta"
 	drop if year>=2010
 	tab month, gen(_Month)
