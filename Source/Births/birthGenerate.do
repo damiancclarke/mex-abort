@@ -82,8 +82,8 @@ local covPrep  0
 local import   0
 local mergeCV  0
 local mergeB   0
-local Mdetrend 0
-local stateG   1
+local Mdetrend 1
+local stateG   0
 
 local sameyear 0
 ********************************************************************************
@@ -348,15 +348,18 @@ if `Mdetrend'==1 {
 	gen birthdetrend=.
 	drop _Month12
 
+	levelsof id, local(SSid)
 	foreach A of numlist 16(1)49 {
-		dis "Detrending Age==`A'"
+		foreach S of local SSid {
+			dis "Detrending Age==`A' in Municipality `S'"
 
-		reg birth _Month* trend if Age==`A'
-		predict resid if Age==`A', r 
-		sum birth if Age==`A'
-		replace birthdetrend=`r(mean)'+resid if Age==`A'
+			reg birth _Month* trend if Age==`A'&id=="`S'"
+			predict resid if Age==`A'&id=="`S'", r 
+			sum birth if Age==`A'&id=="`S'"
+			replace birthdetrend=`r(mean)'+resid if Age==`A'&id=="`S'"
 
-		drop resid
+			drop resid
+		}
 	}
 	save "$BIR/MunicipalBirths_deseason.dta", replace
 }
