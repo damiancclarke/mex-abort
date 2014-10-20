@@ -78,8 +78,10 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 */	yucatan zacatecas
 
 
-local desc    1
+local desc    0
 local smooth  0
+local reg     1
+
 local newgen  0
 local numreg  0
 local placebo 0
@@ -219,6 +221,46 @@ if `smooth'==1 {
 }
 
 
+********************************************************************************
+*** (3) Regressions
+********************************************************************************
+if `reg'==1 {
+	use "$BIR/StateBirths", clear
+	keep if yearmonth<2010.5
+	gen ageGroup=.
+	foreach num of numlist 1(1)7 {
+		local lb=10+`num'*5
+		local ub=`lb'+5
+		dis "Age Group `num' is between `lb' and `ub'"
+		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
+	}
+	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+	label values ageGroup a
+
+	collapse birthrate (sum) birth `cont', by(DF yearmonth year month ageGroup stateid)
+	gen Abortion      = DF==1&year>2008
+	gen AbortionClose = stateid=="15"&year>2008
+	destring stateid, replace
+
+	local cc cluster(stateid)
+	bys stateid (year month): gen linear=_n
+	foreach num of numlist 1(1)7 {
+		reg birthrate i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
+		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
+		*/ if ageG==`num', `cc'
+		outreg2 Abortion* using "$REG/rateNoControls.tex", tex(pretty)
+		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
+		*/ if ageG==`num', `cc'
+		outreg2 Abortion* using "$REG/rateControls.tex", tex(pretty)
+		reg birth i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
+		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
+		*/ if ageG==`num', `cc'
+		outreg2 Abortion* using "$REG/NumNoControls.tex", tex(pretty)
+		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
+		*/ if ageG==`num', `cc'
+		outreg2 Abortion* using "$REG/NumControls.tex", tex(pretty)
+	}
+}
 
 exit
 
@@ -227,8 +269,6 @@ exit
 *** (6) Generate treatment and trends
 ********************************************************************************
 if `newgen'==1 {
-	gen Abortion      = stateid=="09"&year>2008
-	gen AbortionClose = stateid=="15"&year>2008
 
 	gen yearmonth     = year+(month-1)/12
 	
