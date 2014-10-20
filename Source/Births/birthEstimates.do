@@ -79,6 +79,7 @@ local lName aguascalientes baja_california baja_california_sur campeche       /*
 
 
 local desc    1
+local smooth  0
 local newgen  0
 local numreg  0
 local placebo 0
@@ -107,6 +108,12 @@ if `desc'==1 {
 		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))  ///
 		  title("Birthrate for Age `age'")
 		graph export "$GRA/births`age'.eps", as(eps) replace
+		twoway line birth yearmonth if DF==1&Age==`age', yaxis(1) ///
+	  	  ||   line birth yearmonth if DF==0&Age==`age', yaxis(2) ///
+		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))   ///
+		  legend(label(1 "DF") label(2 "Not DF"))  ///
+		  title("Number of Births for Age `age'")
+		graph export "$GRA/birthsNum`age'.eps", as(eps) replace
 	}
 
 	use "$BIR/StateBirths", clear
@@ -132,10 +139,90 @@ if `desc'==1 {
 		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
 		  title("Birthrate for Age Group `lb' to `ub'")
 		graph export "$GRA/Groupbirths`lb'-`ub'.eps", as(eps) replace
+		twoway line birth yearmonth if DF==1&ageGroup==`ageG', yaxis(1)   ///
+	  	  || line birth yearmonth if DF==0&ageGroup==`ageG',   yaxis(2)   ///
+		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))           ///
+		  legend(label(1 "DF") label(2 "Not DF"))                         ///
+		  title("Number of Births for Age Group `lb' to `ub'")
+		graph export "$GRA/GroupbirtshNum`lb'-`ub'.eps", as(eps) replace
 	}
 }
 
+********************************************************************************
+*** (2) Smoothed descriptive graphs
+********************************************************************************
+if `smooth'==1 {
+	use "$BIR/StateBirths"
+	keep if yearmonth<2010.7
+	collapse birthrate (sum) birth, by(DF yearmonth year month Age)
+	gen panelv=100*DF+Age
+	gen timev =ym(year,month)
+	xtset panelv timev
+	
+	gen smoothBR=.
+	foreach S of numlist 0 1 {
+		foreach a of numlist 15(1)49 {
+			gen sb=birthrate if DF==`S'&Age==`a'
+			gen masb=(F1.sb + sb + L1.sb)/3
+			replace smoothBR=masb if DF==`S'&Age==`a'
+			drop sb masb
+		}
+	}
+
+	cap mkdir $GRA/Smooth
+	foreach age of numlist 15(1)49 {
+		dis "Graphing for Age `age'"
+		twoway line smoothBR yearmonth if DF==1&Age==`age', scheme(s1color) ///
+	  	  ||   line smoothBR yearmonth if DF==0&Age==`age', xline(2008)     ///
+		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))  ///
+		  title("Birthrate for Age `age'")
+		graph export "$GRA/Smooth/Sbirths`age'.eps", as(eps) replace
+	}
+	
+	use "$BIR/StateBirths", clear
+	keep if yearmonth<2010.7
+	gen ageGroup=.
+	foreach num of numlist 1(1)7 {
+		local lb=10+`num'*5
+		local ub=`lb'+5
+		dis "Age Group `num' is between `lb' and `ub'"
+		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
+	}
+	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+	label values ageGroup a
+
+	collapse birthrate (sum) birth, by(DF yearmonth year month ageGroup)
+	gen panelv=100*DF+ageGroup
+	gen timev =ym(year,month)
+	xtset panelv timev
+	
+	gen smoothBR=.
+	foreach S of numlist 0 1 {
+		foreach a of numlist 1(1)7 {
+			gen sb=birthrate if DF==`S'&ageGroup==`a'
+			gen masb=(F2.sb + F1.sb + sb + L1.sb)/3
+			replace smoothBR=masb if DF==`S'&ageGroup==`a'
+			drop sb masb
+		}
+	}
+
+	foreach ageG of numlist 1(1)7 {
+		local lb=10+`ageG'*5
+		local ub=`lb'+5
+		dis "Graphing for AgeGroup `lb' to `ub'"
+		twoway line smoothBR yearmonth if DF==1&ageGroup==`ageG', xline(2008)   ///
+	  	  || line smoothBR yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
+		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
+		  title("Birthrate for Age Group `lb' to `ub'")
+		graph export "$GRA/Smooth/Groupbirths`lb'-`ub'.eps", as(eps) replace
+	}
+}
+
+
+
 exit
+
+
 ********************************************************************************
 *** (6) Generate treatment and trends
 ********************************************************************************
