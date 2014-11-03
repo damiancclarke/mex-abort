@@ -39,6 +39,7 @@ set matsize 10000
 global DAT  "~/database/MexDemografia/DefuncionesGenerales"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
+global POP  "~/investigacion/2014/MexAbort/Data/Population"
 global OUT  "~/investigacion/2014/MexAbort/Results/Mortality"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 
@@ -66,7 +67,10 @@ local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
 */ 15 13 22 6 1 17 29 9
 
-local import 1
+local import 0
+local mergeB 0
+local stateG 1
+
 ********************************************************************************
 *** (2) Import mortality, rename
 ********************************************************************************
@@ -123,92 +127,30 @@ if `import'==1 {
 	label data "Count of Maternal Deaths by age, municipality and month"
 	save "$MOR/MortalityMonth", replace
 }
-exit
 
 ********************************************************************************
-*** (2d) Merge with covariates, generate treatments
+*** (3) Merge with birth data
 ********************************************************************************
 if `mergeB'==1 {
-	use "$BIR/BirthsMonth`app'", clear
-	drop if Age<15|(Age>49&Age!=.)
-   merge 1:1 id year month Age using "$BIR/BirthCovariates"
-	replace birth=0 if _merge==2
-
-	dis "note that in 39094 cases, the mother's age of birth isn't recorded"
-	dis "These are lest in the dataset with age recorded as missing."
-	drop _merge
-
-	gen Abortion      = stateid=="09"&year>2008
-	gen AbortionClose = stateid=="15"&year>2008
-	gen yearmonth     = year+(month-1)/12
-
-	label var birthStateNum "State identifier (numerical)"
-	label var birthMunNum   "Municipal identifier (numerical)"
-	label var Age           "Mother's age at birth"
-	label var month         "Month of birth (1-12)"
-	label var year          "Year of birth (2001-2011)"
-	label var stateid       "State identifier (string)"
-	label var munid         "Municipal identifier (string)"
-	label var id            "Concatenation of state and municipal id (string)"
-	label var state         "State name (in words)"
-	label var municip       "Municipality name (in words)"
-	label var medicalstaff  "Number of medical staff in the municipality"
-	label var MedMissing    "Indicator for missing obs on medical staff"
-	label var planteles     "Number of educational establishments in municipality"
-	label var aulas         "Number of classrooms in municipality"
-	label var bibliotecas   "Number of libraries in municipality"
-	label var laboratorios  "Number of laboratories (study) in the municipality"
-	label var talleres      "Number of workshops in the municipality"
-	label var trimester     "Trimester of the year (I-IV)"
-	label var unemployment  "Unemployment rate in the State"
-	label var condomFirstTe "% teens reporting using condoms at first intercourse"
-	label var condomRecentT "% teens reporting using condoms at recent intercourse"
-	label var anyFirstTeen  "% of teens using any contraceptive method"
-	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
-	label var condomRecent  "% of adults using condoms at recent intercourse"
-	label var anyRecent     "% of adults using any contraceptive at recent intercou"
-	label var Abortion      "Availability of abortion (1 in DF post reform)"
-	label var yearmonth     "Year and month added together (numerical)"
-
-	label data "Birth data and covariates at level of Municipality*Month*Age"
+	use "$MOR/MortalityMonth"
 	drop if year>2010
+	drop if Age<15|Age>49
+	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
+	drop if _merge==1
+
+	replace MMR=0 if _merge==2
+	replace materndeath=0 if _merge==2
+	drop _merge
 	
-	save "$BIR/MunicipalBirths`app'.dta", replace
-}
-
-********************************************************************************
-*** (3) Deseason (de-month) municipal file
-********************************************************************************
-if `Mdetrend'==1 {
-	use "$BIR/MunicipalBirths`app'.dta"
-	drop if year>=2010
-	tab month, gen(_Month)
-	bys id Age: gen trend=_n
-
-	gen birthdetrend=.
-	drop _Month12
-
-	levelsof id, local(SSid)
-	foreach S of local SSid {
-		foreach A of numlist 15(1)49 {
-			dis "Detrending Age==`A' in Municipality `S'"
-
-			reg birth _Month* trend if Age==`A'&id=="`S'"
-			predict resid if Age==`A'&id=="`S'", r 
-			sum birth if Age==`A'&id=="`S'"
-			replace birthdetrend=`r(mean)'+resid if Age==`A'&id=="`S'"
-
-			drop resid
-		}
-	}
-	save "$BIR/MunicipalBirths_deseason`app'.dta", replace
+	label data "Data on maternal deaths linked with births and population"
+	save "$MOR/MunicipalDeaths.dta", replace
 }
 
 ********************************************************************************
 *** (4) Generate State file
 ********************************************************************************
 if `stateG' {
-	use "$BIR/MunicipalBirths`app'.dta", clear
+	use "$MOR/MunicipalDeaths.dta", clear
 
 	replace medicalstaff=. if MedMissing==1
 	replace planteles=. if plantelesMissing==1
@@ -218,18 +160,18 @@ if `stateG' {
 	replace talleres=. if talleresMissing==1
 
 	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows (sum) birth,                 /*
-	*/ by(stateid state year month Age) fast
+	*/ subsidies unemployment any* adolescentKnows (sum) birth MMR materndeath, /*
+	*/ by(stateid year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
 	gen plantelesMissing   = planteles    ==.
 	gen aulasMissing       = aulas        ==.
 	gen bibliotecasMissing = bibliotecas  ==.
 	
-	replace medicalstaff  =0 if medicalstaff ==.
-	replace planteles     =0 if planteles    ==.
-	replace aulas         =0 if planteles    ==.
-	replace bibliotecas   =0 if bibliotecas  ==.	
+	replace medicalstaff  = 0 if medicalstaff ==.
+	replace planteles     = 0 if planteles    ==.
+	replace aulas         = 0 if planteles    ==.
+	replace bibliotecas   = 0 if bibliotecas  ==.	
 	
 	gen stateName=""
 	tokenize `popName'
@@ -243,17 +185,18 @@ if `stateG' {
 		}
 		local ++i
 	}
-	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
+	merge 1:1 stateName Age month year using "$POP/populationStateYearMonth1549.dta"
 	drop if year<2001|year>2010&year!=.
 	drop _merge
 	
 	gen yearmonth= year + (month-1)/12
 	gen birthrate  = birth/imputePop
+	gen Mdeathrate = MMR/birth
 	gen DF=stateNum=="32"
 
 	label var DF            "Indicator for Mexico D.F."
 	label var stateName     "State name from population data"
-	label var stateNum      "State number (string) from population data"	
+	label var stateid       "State number (string) from population data"	
 	label var medicalstaff  "Number of medical staff in the state (average)"
 	label var MedMissing    "Indicator for missing obs on medical staff"
 	label var planteles     "Number of educational establishments in municipality"
@@ -269,36 +212,8 @@ if `stateG' {
 	label var yearmonth     "Year and month added together (numerical)"
 
 
-	label data "Birth data and covariates at level of State*Month*Age"
-	save "$BIR/StateBirths`app'.dta", replace
-}
-
-********************************************************************************
-*** (5) Deseason (de-month) State file
-********************************************************************************
-if `Sdetrend'==1 {
-	use "$BIR/StateBirths`app'.dta"
-	drop if year>=2010
-	tab month, gen(_Month)
-	bys stateid Age: gen trend=_n
-
-	gen birthdetrend=.
-	drop _Month12
-
-	levelsof stateid, local(SSid)
-	foreach A of numlist 15(1)49 {
-		foreach S of local SSid {
-			dis "Detrending Age==`A' in State `S'"
-
-			reg birth _Month* trend if Age==`A'&stateid=="`S'"
-			predict resid if Age==`A'&stateid=="`S'", r 
-			sum birth if Age==`A'&stateid=="`S'"
-			replace birthdetrend=`r(mean)'+resid if Age==`A'&stateid=="`S'"
-
-			drop resid
-		}
-	}
-	save "$BIR/StateBirths_deseason`app'.dta", replace
+	label data "Birth, death data and covariates at level of State*Month*Age"
+	save "$MOR/StateDeaths.dta", replace
 }
 
 
