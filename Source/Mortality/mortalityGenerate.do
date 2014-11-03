@@ -98,21 +98,21 @@ if `import'==1 {
 	collapse (sum) MMR materndea edad_ag, by(ent_oc mun_oc mes_oc anio_oc edad)
 
 	rename edad Age
-	rename ent_ocurr  StateNum
-	rename mun_ocurr  MunNum
-	rename anio_ocurr year
-	rename mes_ocurr  month
-	rename edad_agru  ageGroup
+	rename ent_ocurr StateNum
+	rename mun_ocurr MunNum
+	rename anio_ocur year
+	rename mes_ocurr month
+	rename edad_agru ageGroup
 
 	replace Age=Age-4000
 	
-	tostring birthStateNum, gen(entN)
+	tostring StateNum, gen(entN)
 	gen length=length(entN)
 	gen zero="0" if length==1
 	egen stateid=concat(zero entN)
 	drop length zero entN
 
-	tostring birthMunNum, gen(munN)
+	tostring MunNum, gen(munN)
 	gen length=length(munN)
 	gen zero="0" if length==2
 	replace zero="00" if length==1
@@ -120,6 +120,7 @@ if `import'==1 {
 	drop length zero munN
 
 	egen id=concat(stateid munid)
+	label data "Count of Maternal Deaths by age, municipality and month"
 	save "$MOR/MortalityMonth", replace
 }
 exit
