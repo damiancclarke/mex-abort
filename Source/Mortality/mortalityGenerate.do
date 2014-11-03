@@ -38,6 +38,7 @@ set matsize 10000
 ********************************************************************************
 global DAT  "~/database/MexDemografia/DefuncionesGenerales"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
+global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
 global OUT  "~/investigacion/2014/MexAbort/Results/Mortality"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 
@@ -83,30 +84,28 @@ if `import'==1 {
 	replace mun_resid=.  if mun_resid==999
 	replace mun_ocurr=.  if mun_ocurr==999
 	replace ent_resid=.  if ent_resid==99
-	replace dia_ocurr=.  if dis_ocurr==99
+	replace dia_ocurr=.  if dia_ocurr==99
 	replace mes_ocurr=.  if mes_ocurr==99
-	replace anio_ocur=.  if mes_ocurr==9999
+	replace anio_ocur=.  if anio_ocur==9999
 	replace anio_nacim=. if anio_nacim==9999
 	
 	
 	gen MMR=maternas!=""
-	gen materndeath=rem_emba==1
-
+	gen materndeath=rel_emba==1
+ 	keep if materndeath==1 | MMR==1
 	keep if anio_ocur>2001&anio_ocur<=2012
+
+	collapse (sum) MMR materndea edad_ag, by(ent_oc mun_oc mes_oc anio_oc edad)
+
+	rename edad Age
+	rename ent_ocurr  StateNum
+	rename mun_ocurr  MunNum
+	rename anio_ocurr year
+	rename mes_ocurr  month
+	rename edad_agru  ageGroup
+
+	replace Age=Age-4000
 	
-	if `"`period'"'=="Year" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
-	}
-	else if `"`period'"'=="Month" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
-		rename mes_nac month
-	}
-
-	rename edad_madn Age
-	rename ent_ocurr birthStateNum
-	rename mun_ocurr birthMunNum
-	rename ano_nac year
-
 	tostring birthStateNum, gen(entN)
 	gen length=length(entN)
 	gen zero="0" if length==1
@@ -121,9 +120,9 @@ if `import'==1 {
 	drop length zero munN
 
 	egen id=concat(stateid munid)
-	save "$BIR/BirthsMonth`app'", replace
+	save "$MOR/MortalityMonth", replace
 }
-
+exit
 
 ********************************************************************************
 *** (2d) Merge with covariates, generate treatments
