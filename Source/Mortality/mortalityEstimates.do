@@ -16,8 +16,9 @@ MM_jst = a + b*f(t) + c*loc_js + d*reform + e*X_js + f*X_s + u
     X_js are municipality-level time varying controls, and
     X_s are state-level time varying controls
 
-Descriptive statistics are presented including plots of births and birth rates
-over time between DF and other municipalities/states.
+Descriptive statistics are presented including plots of maternal deaths and rat-
+es (marternal deaths divided by total number of births) over time between DF and
+other municipalities/states.
 
 We also examine spillover effects by looking at regions close to the reform. Th-
 is consists (for now) of controlling for all of Mexico as the close region, how-
@@ -32,8 +33,8 @@ ons required for consistent identification.
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
 ly the following data is used:
-   > MunicipalBirths.dta 
-   > StateBirths.dta 
+   > MunicipalDeaths.dta 
+   > StateDeaths.dta 
    >
    >
 
@@ -49,12 +50,10 @@ vers 11
 clear all
 set more off
 cap log close
-set matsize 10000
 
 ********************************************************************************
 *** (1) Globals and locals
 ********************************************************************************
-global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
 global REG  "~/investigacion/2014/MexAbort/Results/Mortality/Regressions"
 global LOG  "~/investigacion/2014/MexAbort/Log"
@@ -62,22 +61,10 @@ global GRA  "~/investigacion/2014/MexAbort/Results/Mortality/Graphs"
 
 log using "$LOG/mortalityEstimates.txt", text replace
 
-local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
-*/ Chihuahua Coahuila Colima DistritoFederal Durango Guanajuato Guerrero      /*
-*/ Hidalgo Jalisco Mexico Michoacan Morelos Nayarit NuevoLeon Oaxaca Puebla   /*
-*/ Queretaro QuintanaRoo SanLuisPotosi Sinaloa Sonora Tabasco Tamaulipas      /*
-*/ Tlaxcala Veracruz Yucatan Zacatecas
-local lName aguascalientes baja_california baja_california_sur campeche       /*
-*/ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
-*/ guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     /*
-*/ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
-*/ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
-*/	yucatan zacatecas
 
-
-local desc    0
+local desc    1
 local smooth  0
-local reg     1
+local reg     0
 
 local newgen  0
 local numreg  0
@@ -96,58 +83,41 @@ local se cluster(idNum)
 *** (2) Descriptive graphs
 ********************************************************************************
 if `desc'==1 {
-	use "$BIR/StateBirths"
-	keep if yearmonth<2010.7
-	collapse birthrate (sum) birth, by(DF yearmonth Age)
-
-	foreach age of numlist 15(1)49 {
-		dis "Graphing for Age `age'"
-		twoway line birthrate yearmonth if DF==1&Age==`age', scheme(s1color) ///
-	  	  ||   line birthrate yearmonth if DF==0&Age==`age', xline(2008)     ///
-		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))  ///
-		  title("Birthrate for Age `age'")
-		graph export "$GRA/births`age'.eps", as(eps) replace
-		twoway line birth yearmonth if DF==1&Age==`age', yaxis(1) ///
-	  	  ||   line birth yearmonth if DF==0&Age==`age', yaxis(2) ///
-		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))   ///
-		  legend(label(1 "DF") label(2 "Not DF"))  ///
-		  title("Number of Births for Age `age'")
-		graph export "$GRA/birthsNum`age'.eps", as(eps) replace
-	}
-
-	use "$BIR/StateBirths", clear
+	use "$BIR/StateDeaths"
 	keep if yearmonth<2010.7
 	gen ageGroup=.
-	foreach num of numlist 1(1)7 {
-		local lb=10+`num'*5
-		local ub=`lb'+5
-		dis "Age Group `num' is between `lb' and `ub'"
-		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-	}
-	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+	replace ageGroup=1 if Age>=15&Age<20
+	replace ageGroup=2 if Age>=20&Age<30
+	replace ageGroup=3 if Age>=30&Age<40
+	replace ageGroup=4 if Age>=40&Age<50
+
+	label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
 	label values ageGroup a
 
-	collapse birthrate (sum) birth, by(DF yearmonth ageGroup)
+	collapse Mdeathrate (sum) MMR, by(DF yearmonth ageGroup)
 
-	foreach ageG of numlist 1(1)7 {
-		local lb=10+`ageG'*5
-		local ub=`lb'+5
-		dis "Graphing for AgeGroup `lb' to `ub'"
-		twoway line birthrate yearmonth if DF==1&ageGroup==`ageG', xline(2008)   ///
-	  	  || line birthrate yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
+	foreach ageG of numlist 1(1)4 {
+		if `ageG'==1 local name "15 to 19"
+		if `ageG'==2 local name "20 to 29"
+		if `ageG'==3 local name "30 to 39"
+		if `ageG'==4 local name "40 to 49"
+		
+		twoway line Mdeathrate yearmonth if DF==1&ageGroup==`ageG', xline(2008)  ///
+	  	  || line Mdeathrat yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
 		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
-		  title("Birthrate for Age Group `lb' to `ub'")
-		graph export "$GRA/Groupbirths`lb'-`ub'.eps", as(eps) replace
-		twoway line birth yearmonth if DF==1&ageGroup==`ageG', yaxis(1)   ///
-	  	  || line birth yearmonth if DF==0&ageGroup==`ageG',   yaxis(2)   ///
+		  title("Maternal Deaths per Live Birth for Age Group `name'")
+		graph export "$GRA/GroupDeaths`ageG'.eps", as(eps) replace
+
+		twoway line MMR yearmonth if DF==1&ageGroup==`ageG', yaxis(1)     ///
+	  	  || line   MMR yearmonth if DF==0&ageGroup==`ageG', yaxis(2)     ///
 		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))           ///
 		  legend(label(1 "DF") label(2 "Not DF"))                         ///
-		  title("Number of Births for Age Group `lb' to `ub'")
-		graph export "$GRA/GroupbirtshNum`lb'-`ub'.eps", as(eps) replace
+		  title("Number of Maternal Deaths for Age Group `name'")
+		graph export "$GRA/GroupDeathsNum`ageG'.eps", as(eps) replace
 	}
 }
 
-
+exit
 ********************************************************************************
 *** (3) Regressions
 ********************************************************************************
