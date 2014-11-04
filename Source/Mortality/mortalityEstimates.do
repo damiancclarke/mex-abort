@@ -83,18 +83,34 @@ local se cluster(idNum)
 *** (2) Descriptive graphs
 ********************************************************************************
 if `desc'==1 {
-	use "$BIR/StateDeaths"
-	keep if yearmonth<2010.7
+	use "$MOR/StateDeaths"
+	keep if year<2011&year>2002
 	gen ageGroup=.
 	replace ageGroup=1 if Age>=15&Age<20
 	replace ageGroup=2 if Age>=20&Age<30
 	replace ageGroup=3 if Age>=30&Age<40
 	replace ageGroup=4 if Age>=40&Age<50
 
+	gen trimester=.
+	replace trimester=1 if month>=1&month<4
+	replace trimester=2 if month>=4&month<7
+	replace trimester=3 if month>=7&month<10
+	replace trimester=4 if month>=10&month<13
+	gen yeart = year + (trimester-1)/4
+
+	gen semester=.
+	replace semester=1 if month>=1&month<7
+	replace semester=2 if month>=7&month<13
+	gen years = year + (semester-1)/2
+
+
+	
 	label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
 	label values ageGroup a
-
-	collapse Mdeathrate (sum) MMR, by(DF yearmonth ageGroup)
+	drop MMR
+	rename materndeath MMR
+	
+	collapse Mdeathrate (sum) MMR, by(DF years ageGroup)
 
 	foreach ageG of numlist 1(1)4 {
 		if `ageG'==1 local name "15 to 19"
@@ -102,19 +118,51 @@ if `desc'==1 {
 		if `ageG'==3 local name "30 to 39"
 		if `ageG'==4 local name "40 to 49"
 		
-		twoway line Mdeathrate yearmonth if DF==1&ageGroup==`ageG', xline(2008)  ///
-	  	  || line Mdeathrat yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
-		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
+		twoway line Mdeathrate year if DF==1&ageGroup==`ageG', xline(2008)    ///
+	  	  || line Mdeathrat year if DF==0&ageGroup==`ageG', scheme(s1color)   ///
+		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))   ///
 		  title("Maternal Deaths per Live Birth for Age Group `name'")
 		graph export "$GRA/GroupDeaths`ageG'.eps", as(eps) replace
 
-		twoway line MMR yearmonth if DF==1&ageGroup==`ageG', yaxis(1)     ///
-	  	  || line   MMR yearmonth if DF==0&ageGroup==`ageG', yaxis(2)     ///
+		twoway line MMR year if DF==1&ageGroup==`ageG', yaxis(1)          ///
+	  	  || line   MMR year if DF==0&ageGroup==`ageG', yaxis(2)          ///
 		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))           ///
 		  legend(label(1 "DF") label(2 "Not DF"))                         ///
 		  title("Number of Maternal Deaths for Age Group `name'")
 		graph export "$GRA/GroupDeathsNum`ageG'.eps", as(eps) replace
 	}
+
+	use "$MOR/StateDeaths", clear
+	keep if year<2011&year>2002
+	drop MMR
+	rename materndeath MMR	
+
+	gen trimester=.
+	replace trimester=1 if month>=1&month<4
+	replace trimester=2 if month>=4&month<7
+	replace trimester=3 if month>=7&month<10
+	replace trimester=4 if month>=10&month<13
+	gen yeart = year + (trimester-1)/4
+	gen semester=.
+	replace semester=1 if month>=1&month<7
+	replace semester=2 if month>=7&month<13
+	gen years = year + (semester-1)/2
+
+	
+	collapse Mdeathrate (sum) MMR, by(DF years)
+	label var MMR "Number of Maternal Deaths"
+
+	twoway line Mdeathrate year if DF==1 || line Mdeathrate year if DF==0, ///
+	  xline(2008) scheme(s1color) xline(2007.3, lpat(dash))                ///
+	  legend(label(1 "DF") label(2 "Not DF"))                              ///
+     title("Maternal Deaths per Live Birth")
+	graph export "$GRA/GroupDeaths.eps", as(eps) replace
+
+	twoway line MMR year if DF==1, yaxis(1) || line MMR year if DF==0,    ///
+	  yaxis(2) scheme(s1color) xline(2008) xline(2007.3, lpat(dash))      ///
+	  xtitle("Year of Register") legend(label(1 "DF") label(2 "Not DF"))  ///
+	  title("Number of Maternal Deaths")
+	graph export "$GRA/GroupDeathsNum.eps", as(eps) replace
 }
 
 exit

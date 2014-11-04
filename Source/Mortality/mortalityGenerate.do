@@ -191,7 +191,7 @@ if `stateG' {
 	
 	gen yearmonth= year + (month-1)/12
 	gen birthrate  = birth/imputePop
-	gen Mdeathrate = MMR/birth
+	gen Mdeathrate = materndeath/birth
 	gen DF=stateNum=="32"
 
 	label var DF            "Indicator for Mexico D.F."
