@@ -62,9 +62,10 @@ global GRA  "~/investigacion/2014/MexAbort/Results/Mortality/Graphs"
 log using "$LOG/mortalityEstimates.txt", text replace
 
 
-local desc    1
-local smooth  0
-local reg     0
+local desc    0
+local reg     1
+
+
 
 local newgen  0
 local numreg  0
@@ -165,49 +166,57 @@ if `desc'==1 {
 	graph export "$GRA/GroupDeathsNum.eps", as(eps) replace
 }
 
-exit
 ********************************************************************************
 *** (3) Regressions
 ********************************************************************************
 if `reg'==1 {
-	use "$BIR/StateBirths", clear
-	keep if yearmonth<2010.5
+	use "$MOR/StateDeaths", clear
+	keep if yearmonth<2010.5&year>2002
+
+	drop MMR
+	rename materndeath MMR	
+
 	gen ageGroup=.
-	foreach num of numlist 1(1)7 {
-		local lb=10+`num'*5
-		local ub=`lb'+5
-		dis "Age Group `num' is between `lb' and `ub'"
-		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-	}
-	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+	replace ageGroup=1 if Age>=15&Age<20
+	replace ageGroup=2 if Age>=20&Age<30
+	replace ageGroup=3 if Age>=30&Age<40
+	replace ageGroup=4 if Age>=40&Age<50
+	label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
 	label values ageGroup a
 
-	collapse birthrate (sum) birth `cont', by(DF yearmonth year month ageGroup stateid)
+	collapse Mdeathrate (sum) MMR `cont', by(DF yearmon year month ageGroup stateid)
 	gen Abortion      = DF==1&year>2008
 	gen AbortionClose = stateid=="15"&year>2008
 	destring stateid, replace
 
 	local cc cluster(stateid)
 	bys stateid (year month): gen linear=_n
-	foreach num of numlist 1(1)7 {
-		reg birthrate i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
+	foreach num of numlist 1(1)4 {
+		reg Mdeathrate i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
+		reg Mdeathrate i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
 		*/ if ageG==`num', `cc'
 		outreg2 Abortion* using "$REG/rateNoControls.tex", tex(pretty)
-		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
+		reg Mdeathrate i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
 		*/ if ageG==`num', `cc'
 		outreg2 Abortion* using "$REG/rateControls.tex", tex(pretty)
-		reg birth i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
+		reg MMR i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
+		reg MMR i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
 		*/ if ageG==`num', `cc'
 		outreg2 Abortion* using "$REG/NumNoControls.tex", tex(pretty)
-		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
+		reg MMR i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
 		*/ if ageG==`num', `cc'
 		outreg2 Abortion* using "$REG/NumControls.tex", tex(pretty)
 	}
 }
 
 exit
+
+
+
+
+
+
+
 
 
 ********************************************************************************
