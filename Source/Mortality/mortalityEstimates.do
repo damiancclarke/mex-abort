@@ -61,56 +61,59 @@ global GRA  "~/investigacion/2014/MexAbort/Results/Mortality/Graphs"
 
 log using "$LOG/mortalityEstimates.txt", text replace
 
-
-local desc    0
-local reg     1
-
-
-
-local newgen  0
-local numreg  0
-local placebo 0
-local AgeGrp  0
-local placGrp 0
-
+local cc cluster(stateid)
+local FE i.stateid i.year#i.month
+local tr i.stateid#c.linear
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
 */ totalout subsidies unemployment
-local FE i.year#i.month
-local trend StDum*
-local se cluster(idNum)
 
+foreach usado in eclplot parmby {
+	cap which `usado'
+	if _rc!=0 ssc install `usado'
+}
+
+**SWITCHES
+local desc    0
+local reg     0
+local placebo 0
+local plot    1
+
+********************************************************************************
+*** (2) Basic set up as base for all regressions
+********************************************************************************
+use "$MOR/StateDeaths"
+
+keep if year<2011&year>2002
+
+gen ageGroup=.
+replace ageGroup=1 if Age>=15&Age<20
+replace ageGroup=2 if Age>=20&Age<30
+replace ageGroup=3 if Age>=30&Age<40
+replace ageGroup=4 if Age>=40&Age<50
+
+gen trimester=.
+replace trimester=1 if month>=1&month<4
+replace trimester=2 if month>=4&month<7
+replace trimester=3 if month>=7&month<10
+replace trimester=4 if month>=10&month<13
+gen yeart = year + (trimester-1)/4
+
+gen semester=.
+replace semester=1 if month>=1&month<7
+replace semester=2 if month>=7&month<13
+gen years = year + (semester-1)/2
+
+label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
+label values ageGroup a
+drop MMR
+rename materndeath MMR
 
 ********************************************************************************
 *** (2) Descriptive graphs
 ********************************************************************************
 if `desc'==1 {
-	use "$MOR/StateDeaths"
-	keep if year<2011&year>2002
-	gen ageGroup=.
-	replace ageGroup=1 if Age>=15&Age<20
-	replace ageGroup=2 if Age>=20&Age<30
-	replace ageGroup=3 if Age>=30&Age<40
-	replace ageGroup=4 if Age>=40&Age<50
 
-	gen trimester=.
-	replace trimester=1 if month>=1&month<4
-	replace trimester=2 if month>=4&month<7
-	replace trimester=3 if month>=7&month<10
-	replace trimester=4 if month>=10&month<13
-	gen yeart = year + (trimester-1)/4
-
-	gen semester=.
-	replace semester=1 if month>=1&month<7
-	replace semester=2 if month>=7&month<13
-	gen years = year + (semester-1)/2
-
-
-	
-	label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
-	label values ageGroup a
-	drop MMR
-	rename materndeath MMR
-	
+	preserve
 	collapse Mdeathrate (sum) MMR, by(DF years ageGroup)
 
 	foreach ageG of numlist 1(1)4 {
@@ -132,24 +135,9 @@ if `desc'==1 {
 		  title("Number of Maternal Deaths for Age Group `name'")
 		graph export "$GRA/GroupDeathsNum`ageG'.eps", as(eps) replace
 	}
-
-	use "$MOR/StateDeaths", clear
-	keep if year<2011&year>2002
-	drop MMR
-	rename materndeath MMR	
-
-	gen trimester=.
-	replace trimester=1 if month>=1&month<4
-	replace trimester=2 if month>=4&month<7
-	replace trimester=3 if month>=7&month<10
-	replace trimester=4 if month>=10&month<13
-	gen yeart = year + (trimester-1)/4
-	gen semester=.
-	replace semester=1 if month>=1&month<7
-	replace semester=2 if month>=7&month<13
-	gen years = year + (semester-1)/2
-
+	restore
 	
+	preserve
 	collapse Mdeathrate (sum) MMR, by(DF years)
 	label var MMR "Number of Maternal Deaths"
 
@@ -164,27 +152,15 @@ if `desc'==1 {
 	  xtitle("Year of Register") legend(label(1 "DF") label(2 "Not DF"))  ///
 	  title("Number of Maternal Deaths")
 	graph export "$GRA/GroupDeathsNum.eps", as(eps) replace
+	restore
 }
 
 ********************************************************************************
 *** (3) Regressions
 ********************************************************************************
 if `reg'==1 {
-	use "$MOR/StateDeaths", clear
-	keep if yearmonth<2010.5&year>2002
-
-	drop MMR
-	rename materndeath MMR	
-
-	gen ageGroup=.
-	replace ageGroup=1 if Age>=15&Age<20
-	replace ageGroup=2 if Age>=20&Age<30
-	replace ageGroup=3 if Age>=30&Age<40
-	replace ageGroup=4 if Age>=40&Age<50
-	label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
-	label values ageGroup a
-
-	collapse Mdeathrate (sum) MMR `cont', by(DF yearmon year month ageGroup stateid)
+	preserve
+	collapse Mdeathra `cont' (sum) MMR, by(DF yearmo year month ageGroup stateid)
 	gen Abortion      = DF==1&year>2008
 	gen AbortionClose = stateid=="15"&year>2008
 	destring stateid, replace
@@ -192,203 +168,83 @@ if `reg'==1 {
 	local cc cluster(stateid)
 	bys stateid (year month): gen linear=_n
 	foreach num of numlist 1(1)4 {
-		reg Mdeathrate i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg Mdeathrate i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
+		reg Mdeathrate `FE' `tr' `cont' Abortion* if ageG==`num', `cc'
+		outreg2 Abortion* using "$REG/rateMatDeath.tex", tex(pretty)
+
+		reg MMR        `FE' `tr' `cont' Abortion* `cont' /*
 		*/ if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/rateNoControls.tex", tex(pretty)
-		reg Mdeathrate i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/rateControls.tex", tex(pretty)
-		reg MMR i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg MMR i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
-		*/ if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/NumNoControls.tex", tex(pretty)
-		reg MMR i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/NumControls.tex", tex(pretty)
+		outreg2 Abortion* using "$REG/NumMatDeath.tex", tex(pretty)
 	}
-}
-
-exit
-
-
-
-
-
-
-
-
-
-********************************************************************************
-*** (6) Generate treatment and trends
-********************************************************************************
-if `newgen'==1 {
-
-	gen yearmonth     = year+(month-1)/12
-	
-	qui tab stateid, gen(StDum)
-	qui foreach num of numlist 1(1)32 {
-		replace StDum`num'= StDum`num'*year
-	}
-
-	label data "Full birth data collapsed by Municipality and Age, with covariates"
-	save "$BIR/BirthsMonthCovariates", replace
+	restore
 }
 
 ********************************************************************************
-*** (7) Run total number regressions
-********************************************************************************
-if `numreg'==1 {
-	use "$BIR/BirthsMonthCovariates"
-	keep if Age<=40&Age>14
-	
-	destring id, gen(idNum)
-	
-	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
-	*/ saving("$OUT/MFE.dta", replace)
-	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'", by(Age) /*
-	*/ saving("$OUT/MFET.dta", replace)
-}
-
-if `AgeGrp'==1 {
-	use "$BIR/BirthsMonthCovariates"
-	keep if Age<=40&Age>14
-	
-	destring id, gen(idNum)
-	gen AgeGroup=1 if Age>=15&Age<20
-	replace AgeGroup=2 if Age>=20&Age<25
-	replace AgeGroup=3 if Age>=25&Age<30
-	replace AgeGroup=4 if Age>=30
-
-	collapse (sum) birth (mean) Abort* `cont' idNum `trend', /*
-	*/ by(AgeGroup stateid munid id year month)
-	
-	parmby "areg birth `FE' `cont' Abort*, absorb(idNum) `se'", by(AgeGroup) /*
-	*/ saving("$OUT/MFEAgeG.dta", replace) 
-	parmby "areg birth `FE' `trend' `cont' Abort*, absorb(idNum) `se'",  /*
-	*/ by(AgeGroup) saving("$OUT/MFETAgeG.dta", replace)
-}
-
-********************************************************************************
-*** (8) Placebo regressions
+*** (4) Placebo regressions
 ********************************************************************************
 if `placebo'==1 {
-	use "$BIR/BirthsMonthCovariates", clear
-	keep if Age<=40&Age>14
-	cap mkdir "$OUT/Placebo"
-	global P "$OUT/Placebo"
-	
-	destring id, gen(idNum)
-
-	foreach n of numlist 4 5 6 {
-		gen Placebo`n'      = stateid=="09"&year>200`n'
-		gen PlaceboClose`n' = stateid=="15"&year>200`n'
-		replace Placebo`n'       = . if year>=2008
-		replace PlaceboClose`n'  = . if year>=2008
-
-		parmby "areg birth `FE' `cont' Place*, absorb(idNum) `se'", by(Age) /*
-		*/ saving("$P/MFE`n'.dta", replace) 
-		parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
-		*/ by(Age) saving("$P/MmFET`n'.dta", replace) 
-		drop Place*
-	}
-}
-
-if `placGrp'==1 {
-	use "$BIR/BirthsMonthCovariates", clear
-	keep if Age<=40&Age>14
-	global P "$OUT/Placebo"
+	global P "$REG/Placebo"
 	local files
+	preserve
+
+	collapse Mdeathra `cont' (sum) MMR, by(DF yearmo year month ageGroup stateid)
+	bys stateid (year month): gen linear=_n
+	gen Abortion      = DF==1&year>2008
+	gen AbortionClose = stateid=="15"&year>2008
+	destring stateid, replace
+	drop if ageGroup==.
 	
-	destring id, gen(idNum)
-	gen AgeGroup=1 if Age>=15&Age<20
-	replace AgeGroup=2 if Age>=20&Age<25
-	replace AgeGroup=3 if Age>=25&Age<30
-	replace AgeGroup=4 if Age>=30
-
-	collapse (sum) birth (mean) `cont' idNum `trend', /*
-	*/ by(AgeGroup stateid munid id year month yearmonth)
-
 	foreach n of numlist 4 5 6 7 {
 		foreach m of numlist 1(2)11 {
-			cap rm "$P/MPlacFET_`n'_`m'.dta"
+			cap rm "$P/Placebo200`n'_`m'.dta"
 			
 			local time = 200`n'+(`m'-1)/12
 			dis "Time is `time'"
 
-			gen Placebo`n'_`m'      = stateid=="09"&yearmonth>200`n'+(`m'-1)/12
-			gen PlaceboClose`n'_`m' = stateid=="15"&year>200`n'
+			gen Placebo`n'_`m'      = stateid==9&yearmonth>200`n'+(`m'-1)/12
+			gen PlaceboClose`n'_`m' = stateid==15&yearmonth>200`n'+(`m'-1)/12
 			replace Placebo`n'_`m'       = . if year>=2008
 			replace PlaceboClose`n'_`m'  = . if year>=2008
-
-			parmby "areg birth `FE' `trend' `cont' Place*, absorb(idNum) `se'", /*
-			*/ by(Age) saving("$P/MPlacFET_`n'_`m'.dta", replace)
-			local files `files' "$P/MPlacFET_`n'_`m'.dta"
+	
+			parmby "reg Mdeathrate `FE' `tr' `cont' Placebo* , `cc'", by(ageGroup) /*
+			*/ saving("$P/Placebo200`n'_`m'.dta", replace)
+			local files `files' "$P/Placebo200`n'_`m'.dta"
 			drop Place*
 		}
 	}
+	parmby "reg Mdeathrate `FE' `tr' `cont' Abort* , `cc'", by(ageGroup) /*
+	*/ saving("$P/Treat.dta", replace)
+
 	clear
-	append using `files'
+	append using `files' "$P/Treat.dta"
 	save "$P/AgeGroupPlacebos", replace
+	restore
 }
 
-
 ********************************************************************************
-*** (9) Plot main results by age group and age
+*** (5) Plot main results by age group and age
 ********************************************************************************
-clear 
-append using "$P/AgeGroupPlacebos" "$OUT/MFETAgeG.dta"
-gen keep=regexm(parm, "Plac|Abor")
-keep if keep==1
-eclplot est min max AgeGroup if parm=="Abortion", scheme(s1color)
-graph export "$OUT/AgeGroupResults.eps", as(eps) replace
-!epstopdf "$OUT/AgeGroupResults.eps"
+if `plot'==1 {
+	preserve
+	use "$REG/Placebo/AgeGroupPlacebos", clear
+	gen keep=regexm(parm, "Plac|Abor")
+	keep if keep==1
+	eclplot est min max ageGroup if parm=="Abortion", scheme(s1color)
+	graph export "$GRA/AgeGroupResults.eps", as(eps) replace
 
-gen time=.
-foreach n1 of numlist 4(1)7{
-	foreach n2 of numlist 1(2)11 {
-		replace time=2000+`n1'+(`n2'-1)/12 if parm=="Placebo`n1'_`n2'"
+	gen time=.
+	foreach n1 of numlist 4(1)7{
+		foreach n2 of numlist 1(2)11 {
+			replace time=2000+`n1'+(`n2'-1)/12 if parm=="Placebo`n1'_`n2'"
+		}
 	}
+	replace time=2008 if parm=="Abortion"
+	foreach g in 1 2 3 4 {
+		eclplot est min max time if ageGroup==`g', scheme(s1color) yline(0) /*
+		*/ title("Age Group `g'")
+		graph export "$GRA/PlaceboResult_Age`g'.eps", as(eps) replace		
+	}
+	restore
 }
-replace time=2008 if parm=="Abortion"
-foreach g in 1 2 3 4 {
-	eclplot est min max time if AgeGroup==`g', scheme(s1color) yline(0) /*
-	*/ title("Age Group `g'")
-	graph export "$OUT/PlaceboResult_Age`g'.eps", as(eps) replace
-	!epstopdf "$OUT/PlaceboResult_Age`g'.eps"
-}
-
-use "$OUT/MFET.dta", clear
-keep if parm=="Abortion"|parm=="AbortionClose"
-eclplot est min max Age if parm=="Abortion", scheme(s1color)
-graph export "$OUT/DF_EstimatesAge.eps", as(eps) replace
-eclplot est min max Age if parm=="AbortionClose", scheme(s1color)
-graph export "$OUT/Mex_EstimatesAge.eps", as(eps) replace
-
-********************************************************************************
-*** (10) Import regression results and plot
-********************************************************************************
-clear
-append using "$OUT/MFET.dta" "$P/MFET3.dta" "$P/MFET4.dta" "$P/MFET5.dta" "$P/MFET6.dta"
-keep if parm=="Abortion"|parm=="AbortionClose"|parm=="Placebo3"| /*
-*/ parm=="PlaceboClose3"|parm=="Placebo4"|parm=="PlaceboClose4"| /*
-*/ parm=="PlaceboClose4"|parm=="Placebo5"|parm=="PlaceboClose5"| /*
-*/ parm=="PlaceboClose5"|parm=="Placebo6"|parm=="PlaceboClose6"
-
-gen year=2003 if parm=="PlaceboClose3"|parm=="Placebo3"
-replace year=2004 if parm=="PlaceboClose4"|parm=="Placebo4"
-replace year=2005 if parm=="PlaceboClose5"|parm=="Placebo5"
-replace year=2006 if parm=="PlaceboClose6"|parm=="Placebo6"
-replace year=2008 if parm=="AbortionClose"|parm=="Abortion"
-
-keep if Age==25
-eclplot est min max year if parm=="Placebo3"|parm=="Placebo4"|/*
-*/ parm=="Placebo5"|parm=="Placebo6"|parm=="Abortion", scheme(s1color)
-graph export "$OUT/DF_EstimatesPlacebo.eps", as(eps) replace
-
-eclplot est min max year if parm=="PlaceboClose3"|parm=="PlaceboClose4"|/*
-*/ parm=="PlaceboClose5"|parm=="PlaceboClose6"|parm=="AbortionClose", scheme(s1color)
-graph export "$OUT/Mex_EstimatesPlacebo.eps", as(eps) replace 
 
 ********************************************************************************
 *** (X) Clean
