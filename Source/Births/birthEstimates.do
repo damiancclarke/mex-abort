@@ -34,8 +34,6 @@ ocals defining locations of key data sets and specification decisions.  Current-
 ly the following data is used:
    > MunicipalBirths.dta 
    > StateBirths.dta 
-   >
-   >
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
 
@@ -51,7 +49,6 @@ vers 11
 clear all
 set more off
 cap log close
-set matsize 10000
 
 ********************************************************************************
 *** (1) Globals and locals
@@ -65,20 +62,14 @@ cap mkdir $REG
 cap mkdir $GRA
 log using $LOG/birthEstimates.txt, text replace
 
-local sName Aguascalientes BajaCalifornia BajaCaliforniaSur Campeche Chiapas  /*
-*/ Chihuahua Coahuila Colima DistritoFederal Durango Guanajuato Guerrero      /*
-*/ Hidalgo Jalisco Mexico Michoacan Morelos Nayarit NuevoLeon Oaxaca Puebla   /*
-*/ Queretaro QuintanaRoo SanLuisPotosi Sinaloa Sonora Tabasco Tamaulipas      /*
-*/ Tlaxcala Veracruz Yucatan Zacatecas
-local lName aguascalientes baja_california baja_california_sur campeche       /*
-*/ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
-*/ guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     /*
-*/ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
-*/ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
-*/	yucatan zacatecas
+local FE i.stateid i.year#i.month 
+local tr i.stateid#c.linear
+local se cluster(stateid)
+local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
+*/ totalout subsidies unemployment
 
 
-local desc    0
+local desc    1
 local smooth  0
 local reg     1
 
@@ -88,21 +79,30 @@ local placebo 0
 local AgeGrp  0
 local placGrp 0
 
-local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
-*/ totalout subsidies unemployment
-local FE i.year#i.month
-local trend StDum*
-local se cluster(idNum)
+
+********************************************************************************
+*** (1b) Data and Specific Decisions
+********************************************************************************
+use "$BIR/StateBirths.dta"
+keep if yearmonth>=2004&yearmonth<2010.7
+
+gen ageGroup=.
+foreach num of numlist 1(1)7 {
+	local lb=10+`num'*5
+	local ub=`lb'+5
+	dis "Age Group `num' is between `lb' and `ub'"
+	replace ageGroup=`num' if Age>=`lb'&Age<`ub'
+}
+label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
+label values ageGroup a
 
 
 ********************************************************************************
 *** (2) Descriptive graphs
 ********************************************************************************
 if `desc'==1 {
-	use "$BIR/StateBirths"
-	keep if yearmonth<2010.7
+	preserve
 	collapse birthrate (sum) birth, by(DF yearmonth Age)
-
 	foreach age of numlist 15(1)49 {
 		dis "Graphing for Age `age'"
 		twoway line birthrate yearmonth if DF==1&Age==`age', scheme(s1color) ///
@@ -117,21 +117,10 @@ if `desc'==1 {
 		  title("Number of Births for Age `age'")
 		graph export "$GRA/birthsNum`age'.eps", as(eps) replace
 	}
+	restore
 
-	use "$BIR/StateBirths", clear
-	keep if yearmonth<2010.7
-	gen ageGroup=.
-	foreach num of numlist 1(1)7 {
-		local lb=10+`num'*5
-		local ub=`lb'+5
-		dis "Age Group `num' is between `lb' and `ub'"
-		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-	}
-	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
-	label values ageGroup a
-
+	preserve
 	collapse birthrate (sum) birth, by(DF yearmonth ageGroup)
-
 	foreach ageG of numlist 1(1)7 {
 		local lb=10+`ageG'*5
 		local ub=`lb'+5
@@ -148,14 +137,14 @@ if `desc'==1 {
 		  title("Number of Births for Age Group `lb' to `ub'")
 		graph export "$GRA/GroupbirtshNum`lb'-`ub'.eps", as(eps) replace
 	}
+	restore
 }
 
 ********************************************************************************
 *** (2) Smoothed descriptive graphs
 ********************************************************************************
 if `smooth'==1 {
-	use "$BIR/StateBirths"
-	keep if yearmonth<2010.7
+	preserve
 	collapse birthrate (sum) birth, by(DF yearmonth year month Age)
 	gen panelv=100*DF+Age
 	gen timev =ym(year,month)
@@ -180,19 +169,9 @@ if `smooth'==1 {
 		  title("Birthrate for Age `age'")
 		graph export "$GRA/Smooth/Sbirths`age'.eps", as(eps) replace
 	}
+	restore
 	
-	use "$BIR/StateBirths", clear
-	keep if yearmonth<2010.7
-	gen ageGroup=.
-	foreach num of numlist 1(1)7 {
-		local lb=10+`num'*5
-		local ub=`lb'+5
-		dis "Age Group `num' is between `lb' and `ub'"
-		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-	}
-	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
-	label values ageGroup a
-
+	preserve
 	collapse birthrate (sum) birth, by(DF yearmonth year month ageGroup)
 	gen panelv=100*DF+ageGroup
 	gen timev =ym(year,month)
@@ -218,6 +197,7 @@ if `smooth'==1 {
 		  title("Birthrate for Age Group `lb' to `ub'")
 		graph export "$GRA/Smooth/Groupbirths`lb'-`ub'.eps", as(eps) replace
 	}
+	restore
 }
 
 
@@ -225,61 +205,30 @@ if `smooth'==1 {
 *** (3) Regressions
 ********************************************************************************
 if `reg'==1 {
-	use "$BIR/StateBirths", clear
-	keep if yearmonth<2010.5
-	gen ageGroup=.
-	foreach num of numlist 1(1)7 {
-		local lb=10+`num'*5
-		local ub=`lb'+5
-		dis "Age Group `num' is between `lb' and `ub'"
-		replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-	}
-	label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
-	label values ageGroup a
-
-	collapse birthrate (sum) birth `cont', by(DF yearmonth year month ageGroup stateid)
+	preserve
+	collapse birthra (sum) birth `cont', by(DF yearmo year month ageGro stateid)
 	gen Abortion      = DF==1&year>2008
 	gen AbortionClose = stateid=="15"&year>2008
 	destring stateid, replace
 
-	local cc cluster(stateid)
 	bys stateid (year month): gen linear=_n
 	foreach num of numlist 1(1)7 {
-		reg birthrate i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
-		*/ if ageG==`num', `cc'
+
+		reg birthrate `FE' `tr' Abortion* if ageG==`num', `se'
 		outreg2 Abortion* using "$REG/rateNoControls.tex", tex(pretty)
-		reg birthrate i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
+		reg birthrate `FE' `tr' `cont' Abortion* if ageG==`num', `se'
 		outreg2 Abortion* using "$REG/rateControls.tex", tex(pretty)
-		reg birth i.stateid i.year#i.month Abortion* if ageG==`num', `cc'
-		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* /*
-		*/ if ageG==`num', `cc'
+
+		reg birth `FE' `tr' Abortion* if ageG==`num', `se'
 		outreg2 Abortion* using "$REG/NumNoControls.tex", tex(pretty)
-		reg birth i.stateid i.year#i.month i.stateid#c.linear Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
+		reg birth `FE' `tr' Abortion* `cont' if ageG==`num', `se'
 		outreg2 Abortion* using "$REG/NumControls.tex", tex(pretty)
 	}
+	restore
 }
 
 exit
 
-
-********************************************************************************
-*** (6) Generate treatment and trends
-********************************************************************************
-if `newgen'==1 {
-
-	gen yearmonth     = year+(month-1)/12
-	
-	qui tab stateid, gen(StDum)
-	qui foreach num of numlist 1(1)32 {
-		replace StDum`num'= StDum`num'*year
-	}
-
-	label data "Full birth data collapsed by Municipality and Age, with covariates"
-	save "$BIR/BirthsMonthCovariates", replace
-}
 
 ********************************************************************************
 *** (7) Run total number regressions
