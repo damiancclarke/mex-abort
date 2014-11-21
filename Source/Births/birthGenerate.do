@@ -301,7 +301,7 @@ if `import'==1 {
 ********************************************************************************
 if `rural'==1 {
     use "$DAT/NACIM12.dta"
-    gen rural=tloc_regis >= 3
+    gen rural=tloc_regis <= 3
     collapse rural, by(ent_resid mun_resid)
 
     rename ent_resid birthStateNum
