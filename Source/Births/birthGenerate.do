@@ -89,12 +89,13 @@ local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /
 */ 15 13 22 6 1 17 29 9
 
 local covPrep  0
+local rural    1
 local import   0
 local mergeCV  0
-local mergeB   0
+local mergeB   1
 local Mdetrend 0
 local stateG   1
-local Sdetrend 1
+local Sdetrend 0
 
 local sameyear 0
 if `sameyear'==1 local app Sameyear
@@ -295,14 +296,31 @@ if `import'==1 {
 	save "$BIR/BirthsMonth`app'", replace
 }
 
+********************************************************************************
+*** (2d) Generate rurality data from populations in birth data
+********************************************************************************
+if `rural'==1 {
+    use "$DAT/NACIM12.dta"
+    gen rural=tloc_regis >= 3
+    collapse rural, by(ent_resid mun_resid)
+
+    rename ent_resid birthStateNum
+    rename mun_resid birthMunNum
+    lab dat "Percent of localities which are rural by municipio (from births)"
+    save "$DAT2/Rurality", replace
+}
 
 ********************************************************************************
-*** (2d) Merge with covariates, generate treatments
+*** (2e) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
 	use "$BIR/BirthsMonth`app'", clear
 	drop if Age<15|(Age>49&Age!=.)
-   merge 1:1 id year month Age using "$BIR/BirthCovariates"
+  merge m:1 birthStateNum birthMunNum using "$DAT2/Rurality"
+  drop if _merge!=3
+  drop _merge
+  
+  merge 1:1 id year month Age using "$BIR/BirthCovariates"
 	replace birth=0 if _merge==2
 
 	dis "note that in 39094 cases, the mother's age of birth isn't recorded"
@@ -343,8 +361,12 @@ if `mergeB'==1 {
 
 	label data "Birth data and covariates at level of Municipality*Month*Age"
 	drop if year>2010
-	
-	save "$BIR/MunicipalBirths`app'.dta", replace
+
+  *******THIS SUBSETS TO ONLY REGIONAL*********
+  keep if rural<=0.5
+  *******THIS SUBSETS TO ONLY REGIONAL*********
+
+  save "$BIR/MunicipalBirths`app'.dta", replace
 }
 
 ********************************************************************************
@@ -361,7 +383,7 @@ if `Mdetrend'==1 {
 
 	levelsof id, local(SSid)
 	foreach S of local SSid {
-		foreach A of numlist 16(1)49 {
+		foreach A of numlist 15(1)49 {
 			dis "Detrending Age==`A' in Municipality `S'"
 
 			reg birth _Month* trend if Age==`A'&id=="`S'"
@@ -389,7 +411,7 @@ if `stateG' {
 	replace talleres=. if talleresMissing==1
 
 	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows (sum) birth,                 /*
+	*/ subsidies unemployment any* adolescentKnows rural (sum) birth,           /*
 	*/ by(stateid state year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
@@ -457,7 +479,7 @@ if `Sdetrend'==1 {
 	drop _Month12
 
 	levelsof stateid, local(SSid)
-	foreach A of numlist 16(1)49 {
+	foreach A of numlist 15(1)49 {
 		foreach S of local SSid {
 			dis "Detrending Age==`A' in State `S'"
 
