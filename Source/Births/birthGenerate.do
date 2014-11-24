@@ -1,11 +1,11 @@
-/* birthGenerate v0.00              DCC/HM                 yyyy-mm-dd:2014-10-17
+/* birthGenerate v0.10              DCC/HM                 yyyy-mm-dd:2014-10-17
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
 This script genrates a number of output files based on birth data and covariates 
 produced from the script municipPrep.py as well as population data produced from
-poplnPrep.do and contraceptive data from contracepPrep.do.  It produces the fol-
-lowing four files:
+poplnPrep.do and contraceptive data from contracepPrep.do. It produces the foll-
+owing four files:
 
 	> MunicipalBirths.dta
 	> StateBirths.dta
@@ -89,7 +89,7 @@ local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /
 */ 15 13 22 6 1 17 29 9
 
 local covPrep  0
-local rural    1
+local rural    0
 local import   0
 local mergeCV  0
 local mergeB   1
@@ -229,7 +229,7 @@ if `mergeCV'==1 {
 	drop if _merge==2
 	drop _merge
 
-   *expand so one cell for each age 15-49 (expensive)
+  *expand so one cell for each age 15-49 (expensive)
 	expand 35
 	bys id year month: gen Age=_n+14
 	save "$BIR/BirthCovariates", replace
@@ -324,7 +324,7 @@ if `mergeB'==1 {
 	replace birth=0 if _merge==2
 
 	dis "note that in 39094 cases, the mother's age of birth isn't recorded"
-	dis "These are lest in the dataset with age recorded as missing."
+	dis "These are left in the dataset with age recorded as missing."
 	drop _merge
 
 	gen Abortion      = stateid=="09"&year>2008
@@ -363,7 +363,7 @@ if `mergeB'==1 {
 	drop if year>2010
 
   *******THIS SUBSETS TO ONLY REGIONAL*********
-  keep if rural<=0.5
+  *******keep if rural<=0.4
   *******THIS SUBSETS TO ONLY REGIONAL*********
 
   save "$BIR/MunicipalBirths`app'.dta", replace
