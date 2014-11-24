@@ -1,4 +1,4 @@
-/* mortalityGenerate v0.00          DCC/HM                 yyyy-mm-dd:2014-11-03
+/* mortalityGenerate v0.10          DCC/HM                 yyyy-mm-dd:2014-11-03
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -7,7 +7,8 @@ riates included in birth data.  These covariates include time-varying municipal
 and regional controls, along with total population and total births at the same
 level. It produces the following files:
 
-   > MunicipalMortality.dta
+   > MunicipalDeaths.dta
+   > StateDeaths.dta
 
 where the difference between each file is the level of aggregation (State is hi-
 gher than Municipal).
@@ -40,25 +41,12 @@ global DAT  "~/database/MexDemografia/DefuncionesGenerales"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
 global POP  "~/investigacion/2014/MexAbort/Data/Population"
-global OUT  "~/investigacion/2014/MexAbort/Results/Mortality"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 
 log using "$LOG/mortalityGenerate.txt", text replace
 
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
 */ totalout subsidies unemployment condom* any* adolescentKnows 
-
-foreach uswado in mergemany {
-	cap which `uswado'
-	if _rc!=0 ssc install `uswado'
-}
-
-local lName aguascalientes baja_california baja_california_sur campeche       /*
-*/ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
-*/ guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     /*
-*/ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
-*/ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
-*/ yucatan zacatecas
 local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 */ Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      /*
 */ Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      /*
@@ -68,7 +56,7 @@ local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /
 */ 15 13 22 6 1 17 29 9
 
 local import 0
-local mergeB 0
+local mergeB 1
 local stateG 1
 
 ********************************************************************************
@@ -137,7 +125,7 @@ if `mergeB'==1 {
 	drop if Age<15|Age>49
 	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
 	drop if _merge==1
-
+  
 	replace MMR=0 if _merge==2
 	replace materndeath=0 if _merge==2
 	drop _merge

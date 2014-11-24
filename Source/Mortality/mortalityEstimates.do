@@ -74,7 +74,7 @@ foreach usado in eclplot parmby {
 
 **SWITCHES
 local desc    0
-local reg     0
+local reg     1
 local placebo 0
 local plot    1
 
@@ -159,7 +159,10 @@ if `desc'==1 {
 *** (3) Regressions
 ********************************************************************************
 if `reg'==1 {
-	preserve
+  cap rm "$REG/NumMatDeath.tex"
+  cap rm "$REG/NumMatDeath.txt"
+  
+  preserve
 	collapse Mdeathra `cont' (sum) MMR, by(DF yearmo year month ageGroup stateid)
 	gen Abortion      = DF==1&year>2008
 	gen AbortionClose = stateid=="15"&year>2008
@@ -168,11 +171,7 @@ if `reg'==1 {
 	local cc cluster(stateid)
 	bys stateid (year month): gen linear=_n
 	foreach num of numlist 1(1)4 {
-		reg Mdeathrate `FE' `tr' `cont' Abortion* if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/rateMatDeath.tex", tex(pretty)
-
-		reg MMR        `FE' `tr' `cont' Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
+		reg MMR  `FE' `tr' `cont' Abortion* `cont'  if ageG==`num', `cc'
 		outreg2 Abortion* using "$REG/NumMatDeath.tex", tex(pretty)
 	}
 	restore
