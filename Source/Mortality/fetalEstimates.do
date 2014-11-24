@@ -34,8 +34,8 @@ ons required for consistent identification.
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
 ly the following data is used:
-   > MunicipalDeaths.dta 
-   > StateDeaths.dta 
+   > FDeathMunicip.dta 
+   > FDeathState.dta 
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
 
@@ -43,6 +43,8 @@ ly the following data is used:
 Past major versions
    > v0.00: Fetal death regressions and plots
 
+NOTES:
+For now only use sections 1-3.  Sections 4 and 5 need to be revised.
 */
 
 vers 11
@@ -54,11 +56,14 @@ cap log close
 *** (1) Globals and locals
 ********************************************************************************
 global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
-global REG  "~/investigacion/2014/MexAbort/Results/Mortality/Regressions"
+global REG  "~/investigacion/2014/MexAbort/Results/Mortality/Regressions/Fetal"
 global LOG  "~/investigacion/2014/MexAbort/Log"
-global GRA  "~/investigacion/2014/MexAbort/Results/Mortality/Graphs"
+global GRA  "~/investigacion/2014/MexAbort/Results/Mortality/Graphs/Fetal"
 
-log using "$LOG/mortalityEstimates.txt", text replace
+cap mkdir "$GRA"
+cap mkdir "$REG"
+
+log using "$LOG/fetalEstimates.txt", text replace
 
 local cc cluster(stateid)
 local FE i.stateid i.year#i.month
@@ -72,15 +77,15 @@ foreach usado in eclplot parmby {
 }
 
 **SWITCHES
-local desc    0
+local desc    1
 local reg     1
 local placebo 0
-local plot    1
+local plot    0
 
 ********************************************************************************
 *** (2) Basic set up as base for all regressions
 ********************************************************************************
-use "$MOR/StateDeaths"
+use "$MOR/FDeathState.dta"
 
 keep if year<2011&year>2002
 
@@ -90,93 +95,74 @@ replace ageGroup=2 if Age>=20&Age<30
 replace ageGroup=3 if Age>=30&Age<40
 replace ageGroup=4 if Age>=40&Age<50
 
-gen trimester=.
-replace trimester=1 if month>=1&month<4
-replace trimester=2 if month>=4&month<7
-replace trimester=3 if month>=7&month<10
-replace trimester=4 if month>=10&month<13
-gen yeart = year + (trimester-1)/4
-
-gen semester=.
-replace semester=1 if month>=1&month<7
-replace semester=2 if month>=7&month<13
-gen years = year + (semester-1)/2
-
 label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 
 label values ageGroup a
-drop MMR
-rename materndeath MMR
 
 ********************************************************************************
 *** (2) Descriptive graphs
 ********************************************************************************
 if `desc'==1 {
+  foreach y of varlist fetalDeath earlyTerm lateTerm {
+     if `"`y'"'=="fetalDeath" local name "All"
+     if `"`y'"'=="earlyTerm" local name "Early Term"
+     if `"`y'"'=="lateTerm"  local name "Late Term"
 
-	preserve
-	collapse Mdeathrate (sum) MMR, by(DF years ageGroup)
+     preserve
+     collapse (sum) `y', by(DF year ageGroup)
 
-	foreach ageG of numlist 1(1)4 {
-		if `ageG'==1 local name "15 to 19"
-		if `ageG'==2 local name "20 to 29"
-		if `ageG'==3 local name "30 to 39"
-		if `ageG'==4 local name "40 to 49"
+     foreach ageG of numlist 1(1)4 {
+       if `ageG'==1 local name "15 to 19"
+       if `ageG'==2 local name "20 to 29"
+       if `ageG'==3 local name "30 to 39"
+       if `ageG'==4 local name "40 to 49"
 		
-		twoway line Mdeathrate year if DF==1&ageGroup==`ageG', xline(2008)    ///
-	  	  || line Mdeathrat year if DF==0&ageGroup==`ageG', scheme(s1color)   ///
-		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))   ///
-		  title("Maternal Deaths per Live Birth for Age Group `name'")
-		graph export "$GRA/GroupDeaths`ageG'.eps", as(eps) replace
-
-		twoway line MMR year if DF==1&ageGroup==`ageG', yaxis(1)          ///
-	  	  || line   MMR year if DF==0&ageGroup==`ageG', yaxis(2)          ///
-		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))           ///
-		  legend(label(1 "DF") label(2 "Not DF"))                         ///
-		  title("Number of Maternal Deaths for Age Group `name'")
-		graph export "$GRA/GroupDeathsNum`ageG'.eps", as(eps) replace
-	}
-	restore
+       twoway line `y' year if DF==1&ageGroup==`ageG', yaxis(1)          ///
+	  	  || line `y' year if DF==0&ageGroup==`ageG', yaxis(2)             ///
+		    scheme(s1color) xline(2008) xline(2007.3, lpat(dash))            ///
+		    legend(label(1 "DF") label(2 "Not DF"))                          ///
+		    title("Number of Fetal Deaths (`name') for Age Group `name'")
+       graph export "$GRA/FDeaths`ageG'_`y'.eps", as(eps) replace
+    }
+    restore
 	
-	preserve
-	collapse Mdeathrate (sum) MMR, by(DF years)
-	label var MMR "Number of Maternal Deaths"
+    preserve
+    collapse (sum) `y', by(DF year)
+    label var `y' "Number of Fetal Deaths"
 
-	twoway line Mdeathrate year if DF==1 || line Mdeathrate year if DF==0, ///
-	  xline(2008) scheme(s1color) xline(2007.3, lpat(dash))                ///
-	  legend(label(1 "DF") label(2 "Not DF"))                              ///
-     title("Maternal Deaths per Live Birth")
-	graph export "$GRA/GroupDeaths.eps", as(eps) replace
-
-	twoway line MMR year if DF==1, yaxis(1) || line MMR year if DF==0,    ///
-	  yaxis(2) scheme(s1color) xline(2008) xline(2007.3, lpat(dash))      ///
-	  xtitle("Year of Register") legend(label(1 "DF") label(2 "Not DF"))  ///
-	  title("Number of Maternal Deaths")
-	graph export "$GRA/GroupDeathsNum.eps", as(eps) replace
-	restore
+     twoway line `y' year if DF==1, yaxis(1) || line `y' year if DF==0,  ///
+	    yaxis(2) scheme(s1color) xline(2008) xline(2007.3, lpat(dash))     ///
+	    xtitle("Year of Register") legend(label(1 "DF") label(2 "Not DF")) ///
+	    title("Number of Fetal Deaths (`name')")
+	  graph export "$GRA/FDeaths_`y'.eps", as(eps) replace
+	  restore
+  }
 }
 
 ********************************************************************************
 *** (3) Regressions
 ********************************************************************************
 if `reg'==1 {
-	preserve
-	collapse Mdeathra `cont' (sum) MMR, by(DF yearmo year month ageGroup stateid)
-	gen Abortion      = DF==1&year>2008
-	gen AbortionClose = stateid=="15"&year>2008
-	destring stateid, replace
+    cap rm "$REG/numFetDeath.tex"
+    cap rm "$REG/numFetDeath.txt"
 
-	local cc cluster(stateid)
-	bys stateid (year month): gen linear=_n
-	foreach num of numlist 1(1)4 {
-		reg Mdeathrate `FE' `tr' `cont' Abortion* if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/rateMatDeath.tex", tex(pretty)
+    foreach y of varlist fetalDeath earlyTerm lateTerm {
+      preserve
+      collapse `cont' (sum) `y', by(DF yearmo year month ageGroup stateid)
+      gen Abortion      = DF==1&year>2007
+      gen AbortionClose = stateid=="15"&year>2007
+      destring stateid, replace
 
-		reg MMR        `FE' `tr' `cont' Abortion* `cont' /*
-		*/ if ageG==`num', `cc'
-		outreg2 Abortion* using "$REG/NumMatDeath.tex", tex(pretty)
-	}
-	restore
+      local cc cluster(stateid)
+      bys stateid (year month): gen linear=_n
+      foreach num of numlist 1(1)4 {
+          reg `y' `FE' `tr' `cont' Abortion `cont' if ageG==`num', `cc'
+          outreg2 Abortion* using "$REG/numFetDeath.tex", tex(pretty)
+      }
+      restore
+  }
 }
 
+exit
 ********************************************************************************
 *** (4) Placebo regressions
 ********************************************************************************

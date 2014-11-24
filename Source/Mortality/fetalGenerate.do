@@ -47,8 +47,8 @@ local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
 */ 15 13 22 6 1 17 29 9
 
-local import 0
-local mergeB 0
+local import 1
+local mergeB 1
 local stateG 1
 
 ********************************************************************************
@@ -68,7 +68,7 @@ if `import'==1 {
 
   gen fetalDeath=1
   gen earlyTerm=eda_prod<=20
-  gen lateTerm=eda_prod<=20
+  gen lateTerm=eda_prod>20
 	collapse (sum) fetalDeath early late, by(ent_oc mun_oc mes_oc anio_oc eda_ma)
 
 	rename eda_ma Age
