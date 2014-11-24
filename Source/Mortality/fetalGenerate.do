@@ -32,7 +32,6 @@ global DAT  "~/database/MexDemografia/DefuncionesFetales"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global MOR  "~/investigacion/2014/MexAbort/Data/Mortality"
 global POP  "~/investigacion/2014/MexAbort/Data/Population"
-global OUT  "~/investigacion/2014/MexAbort/Results/Mortality"
 global LOG  "~/investigacion/2014/MexAbort/Log"
 
 log using "$LOG/fetalGenerate.txt", text replace
@@ -48,9 +47,9 @@ local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
 */ 15 13 22 6 1 17 29 9
 
-local import 1
-local mergeB 1
-local stateG 0
+local import 0
+local mergeB 0
+local stateG 1
 
 ********************************************************************************
 *** (2) Import mortality, rename
@@ -59,8 +58,8 @@ if `import'==1 {
 	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
 		dis "Appending `yr'"
 		append using "$DAT/FETAL`yr'.dta"
-		keep ent_regis mun_regis ent_ocurr mun_ocurr tloc_ocur sex_prod eda_prod  /*
-    */ dia_ocur mes_ocurr anio_ocur eda_madr
+		keep ent_regis mun_regis ent_ocurr mun_ocurr sex_prod eda_prod dia_ocur   /*
+    */ mes_ocurr anio_ocur eda_madr
 	}
 
   replace ent_ocurr=ent_regis if mun_ocurr==999
@@ -69,7 +68,8 @@ if `import'==1 {
 
   gen fetalDeath=1
   gen earlyTerm=eda_prod<=20
-	collapse (sum) fetalDeath, by(ent_oc mun_oc mes_oc anio_oc eda_ma earlyTerm)
+  gen lateTerm=eda_prod<=20
+	collapse (sum) fetalDeath early late, by(ent_oc mun_oc mes_oc anio_oc eda_ma)
 
 	rename eda_ma Age
 	rename ent_ocurr StateNum
@@ -102,16 +102,16 @@ if `mergeB'==1 {
 	use "$MOR/FetalMunicip.dta"
 	drop if year>2010
 	drop if Age<15|Age>49
-	merge m:1 id Age year month using "$BIR/MunicipalBirths"
-  exit
+	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
 
   drop if _merge==1
 
-	replace MMR=0 if _merge==2
-	replace materndeath=0 if _merge==2
-	drop _merge
+	replace fetalDeath=0 if _merge==2
+  replace earlyTerm =0 if _merge==2
+  replace lateTerm  =0 if _merge==2
+ 	drop _merge
 	
-	label data "Data on maternal deaths linked with births and population"
+	label data "Data on fetal deaths linked with births and population"
 	save "$MOR/FDeathMunicip.dta", replace
 }
 
@@ -128,8 +128,8 @@ if `stateG' {
 	replace bibliotecas=. if bibliotecasMissing==1
 	replace talleres=. if talleresMissing==1
 
-	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows (sum) birth MMR materndeath, /*
+	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom*  /*
+	*/ subsidies unemploym any* adolescentKno (sum) birth fetalDeath early late, /*
 	*/ by(stateid year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
@@ -160,7 +160,9 @@ if `stateG' {
 	
 	gen yearmonth= year + (month-1)/12
 	gen birthrate  = birth/imputePop
-	gen Mdeathrate = materndeath/birth
+	gen Fdeathrate = fetalDeath/birth
+	gen lFdeathrate = earlyTerm/birth
+	gen eFdeathrate = lateTerm/birth
 	gen DF=stateNum=="32"
 
 	label var DF            "Indicator for Mexico D.F."
@@ -181,7 +183,7 @@ if `stateG' {
 	label var yearmonth     "Year and month added together (numerical)"
 
 
-	label data "Birth, death data and covariates at level of State*Month*Age"
+	label data "Birth, fetal death data and covariates at level of State*Month*Age"
 	save "$MOR/FDeathState.dta", replace
 }
 
