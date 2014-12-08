@@ -69,9 +69,10 @@ local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
 */ totalout subsidies unemployment
 
 
-local desc    1
+local desc    0
 local smooth  0
-local reg     1
+local reg     0
+local trend   1
 
 local newgen  0
 local numreg  0
@@ -84,18 +85,23 @@ local placGrp 0
 *** (1b) Data and Specific Decisions
 ********************************************************************************
 use "$BIR/StateBirths.dta"
-keep if yearmonth>=2004&yearmonth<2010.7
+keep if yearmonth>=2001&yearmonth<2010
 
 gen ageGroup=.
-foreach num of numlist 1(1)7 {
-	local lb=10+`num'*5
-	local ub=`lb'+5
-	dis "Age Group `num' is between `lb' and `ub'"
-	replace ageGroup=`num' if Age>=`lb'&Age<`ub'
-}
-label define a 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45+"
-label values ageGroup a
+replace ageGroup=1 if Age>=15&Age<20
+replace ageGroup=2 if Age>=20&Age<30
+replace ageGroup=3 if Age>=30&Age<40
+replace ageGroup=4 if Age>=40&Age<49
 
+
+*foreach num of numlist 1(1)7 {
+*	local lb=10+`num'*5
+*	local ub=`lb'+5
+*	dis "Age Group `num' is between `lb' and `ub'"
+*	replace ageGroup=`num' if Age>=`lb'&Age<`ub'
+*}
+label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40+"
+label values ageGroup a
 
 ********************************************************************************
 *** (2) Descriptive graphs
@@ -108,36 +114,88 @@ if `desc'==1 {
 		twoway line birthrate yearmonth if DF==1&Age==`age', scheme(s1color) ///
 	  	  ||   line birthrate yearmonth if DF==0&Age==`age', xline(2008)     ///
 		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))  ///
-		  title("Birthrate for Age `age'")
+		  title("Birthrate for Age `age'") xlabel(2004[1]2010)
 		graph export "$GRA/births`age'.eps", as(eps) replace
 		twoway line birth yearmonth if DF==1&Age==`age', yaxis(1) ///
 	  	  ||   line birth yearmonth if DF==0&Age==`age', yaxis(2) ///
 		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))   ///
-		  legend(label(1 "DF") label(2 "Not DF"))  ///
-		  title("Number of Births for Age `age'")
+		  legend(label(1 "DF") label(2 "Not DF"))                 ///
+		  title("Number of Births for Age `age'") xlabel(2004[1]2010)
 		graph export "$GRA/birthsNum`age'.eps", as(eps) replace
 	}
 	restore
 
 	preserve
 	collapse birthrate (sum) birth, by(DF yearmonth ageGroup)
-	foreach ageG of numlist 1(1)7 {
-		local lb=10+`ageG'*5
-		local ub=`lb'+5
+	foreach ageG of numlist 1(1)4 {
+      if `ageG'==1 {
+        local lb=15
+        local ub=19
+      }
+      if `ageG'==2 {
+        local lb=20
+        local ub=29
+      }
+      if `ageG'==3 {
+        local lb=30
+        local ub=39
+      }
+      if `ageG'==4 {
+        local lb=40
+        local ub=45
+      }
+
+*      local lb=10+`ageG'*5
+*		local ub=`lb'+5
 		dis "Graphing for AgeGroup `lb' to `ub'"
 		twoway line birthrate yearmonth if DF==1&ageGroup==`ageG', xline(2008)   ///
 	  	  || line birthrate yearmonth if DF==0&ageGroup==`ageG', scheme(s1color) ///
 		  xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "Not DF"))      ///
-		  title("Birthrate for Age Group `lb' to `ub'")
+		  title("Birthrate for Age Group `lb' to `ub'") xlabel(2001[1]2010)
 		graph export "$GRA/Groupbirths`lb'-`ub'.eps", as(eps) replace
 		twoway line birth yearmonth if DF==1&ageGroup==`ageG', yaxis(1)   ///
 	  	  || line birth yearmonth if DF==0&ageGroup==`ageG',   yaxis(2)   ///
 		  scheme(s1color) xline(2008) xline(2007.3, lpat(dash))           ///
-		  legend(label(1 "DF") label(2 "Not DF"))                         ///
+		  legend(label(1 "DF") label(2 "Not DF")) xlabel(2001[1]2010)     ///
 		  title("Number of Births for Age Group `lb' to `ub'")
 		graph export "$GRA/GroupbirtshNum`lb'-`ub'.eps", as(eps) replace
 	}
 	restore
+}
+
+if `trend'==1 {
+    cap mkdir "$GRA/States"
+    preserve
+    collapse birthrate (sum) birth, by(state DF yearmonth ageGroup)
+    foreach ageG of numlist 1(1)4 {
+        if `ageG'==1 {
+            local lb=15
+            local ub=19
+        }
+        if `ageG'==2 {
+            local lb=20
+            local ub=29
+        }
+        if `ageG'==3 {
+            local lb=30
+            local ub=39
+        }
+        if `ageG'==4 {
+            local lb=40
+            local ub=45
+        }
+
+        levelsof state, local(sname)
+        foreach s of local sname {
+            twoway line birthrate yearmonth if DF==1&ageGroup==`ageG',        ///
+            || line birthrate yearmonth if state==`"`s'"'&ageGroup==`ageG',   ///
+            xline(2007.3, lpat(dash)) legend(label(1 "DF") label(2 "`s'"))    ///
+            title("Birthrate for Age Group `lb' to `ub'") xlabel(2001[1]2010) ///
+            xline(2008) scheme(s1color)
+            graph export "$GRA/States/Births_`s'_`lb'-`ub'.eps", as(eps) replace
+        }
+    }
+    restore
 }
 
 ********************************************************************************
@@ -212,17 +270,13 @@ if `reg'==1 {
 	destring stateid, replace
 
 	bys stateid (year month): gen linear=_n
-	foreach num of numlist 1(1)7 {
+	foreach num of numlist 1(1)4 {
 
-		reg birthrate `FE' `tr' Abortion* if ageG==`num', `se'
-		outreg2 Abortion* using "$REG/rateNoControls.tex", tex(pretty)
 		reg birthrate `FE' `tr' `cont' Abortion* if ageG==`num', `se'
-		outreg2 Abortion* using "$REG/rateControls.tex", tex(pretty)
+		outreg2 Abortion* using "$REG/rateBirths.tex", tex(pretty)
 
-		reg birth `FE' `tr' Abortion* if ageG==`num', `se'
-		outreg2 Abortion* using "$REG/NumNoControls.tex", tex(pretty)
-		reg birth `FE' `tr' Abortion* `cont' if ageG==`num', `se'
-		outreg2 Abortion* using "$REG/NumControls.tex", tex(pretty)
+		reg birth `FE' `tr' Abortion `cont' if ageG==`num', `se'
+		outreg2 Abortion* using "$REG/NumBirths.tex", tex(pretty)
 	}
 	restore
 }
