@@ -21,8 +21,8 @@ global DAT "~/database/MexDemografia/Natalidades"
 ********************************************************************************
 *** (2) Unzip raw birth data
 ********************************************************************************
-foreach y in 01 02 03 04 05 06 07 08 09 10 11 12 {
-	cd "$DAT/20`y'"
+foreach y in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
+  cd "$DAT/20`y'"
 	unzipfile "natalidad_base_datos_20`y'", replace
 
 	foreach f in NACIM`y' ENTMUN {
