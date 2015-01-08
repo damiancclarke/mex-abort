@@ -63,6 +63,7 @@ global LOG  "~/investigacion/2014/MexAbort/Log"
 global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
 global COV2 "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
 global COV3 "~/investigacion/2014/MexAbort/Data/Contracep"
+global MUN "~/investigacion/2014/MexAbort/Data/Geo"
 
 log using "$LOG/birthGenerate.txt", text replace
 
@@ -94,11 +95,12 @@ local import   0
 local mergeCV  0
 local mergeB   1
 local Mdetrend 0
-local stateG   1
+local stateG   0
 local Sdetrend 0
 
 local sameyear 0
 if `sameyear'==1 local app Sameyear
+local period Month
 
 ********************************************************************************
 *** (2) Generate Municipal file
@@ -316,9 +318,9 @@ if `rural'==1 {
 if `mergeB'==1 {
 	use "$BIR/BirthsMonth`app'", clear
 	drop if Age<15|(Age>49&Age!=.)
-  merge m:1 birthStateNum birthMunNum using "$DAT2/Rurality"
-  drop if _merge!=3
-  drop _merge
+  *merge m:1 birthStateNum birthMunNum using "$DAT2/Rurality"
+  *drop if _merge!=3
+  *drop _merge
   
   merge 1:1 id year month Age using "$BIR/BirthCovariates"
 	replace birth=0 if _merge==2
@@ -365,8 +367,11 @@ if `mergeB'==1 {
   *******THIS SUBSETS TO ONLY REGIONAL*********
   *******keep if rural<=0.4
   *******THIS SUBSETS TO ONLY REGIONAL*********
-
+  merge m:1 id using "$MUN/metropolitan", gen(_metMerge)
+  
+  
   save "$BIR/MunicipalBirths`app'.dta", replace
+  
 }
 
 ********************************************************************************
