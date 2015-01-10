@@ -1,4 +1,4 @@
-/* birthGenerate v0.10              DCC/HM                 yyyy-mm-dd:2014-10-17
+/* birthGenerate v1.00              DCC/HM                 yyyy-mm-dd:2014-10-17
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -9,22 +9,9 @@ owing four files:
 
 	> MunicipalBirths.dta
 	> StateBirths.dta
-	> MunicipalBirths_deseason.dta
-	> StateBirths_deseason.dta
 
 where the difference between each file is the level of aggregation (State is hi-
-gher than Municipal), and whether or not births are deseasoned to remove regular 
-monthly variation.
-
-There is also another version which can be run if the local `sameyear' is set to
-1. The sameyear version produces the same output, but only includes births regi-
-stered in the same year, and the year following the year of birth. The reason to
-do this is that we are concerned that for later year births, some may be unregi-
-stered given that we only have files up until 2012. By restricting to only incl-
-ude births registered in the same year and the year following the birth, this r-
-esolves the issue, presuming that parental birth registering patterns do not ch-
-ange over time.  If this local is set, the files will be produced as above, how-
-ever will have "Sameyear" at the end of each name.
+gher than Municipal).
 
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
@@ -42,6 +29,7 @@ ly the following data is required:
 
 
 Past major versions
+   > v0.10: Adds in data for degree of rurality, and for municipal area or not
    > v0.00: Creates four files: municipal, state, and deseasoned or not
 
 */
@@ -75,173 +63,172 @@ foreach uswado in mergemany {
 	if _rc!=0 ssc install `uswado'
 }
 
-local lName aguascalientes baja_california baja_california_sur campeche       /*
-*/ coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     /*
-*/ guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     /*
-*/ nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    /*
-*/ sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave /*
-*/ yucatan zacatecas
-local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
-*/ Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      /*
-*/ Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      /*
-*/ Puebla Guanajuato Nayarit Tabasco Mexico Hidalgo Queretaro Colima          /*
-*/ Aguascalientes Morelos Tlaxcala DistritoFederal
-local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
-*/ 15 13 22 6 1 17 29 9
+local covPrep  1
+local mergeCV  1
 
-local covPrep  0
 local rural    0
 local import   0
-local mergeCV  0
-local mergeB   1
+local mergeB   0
 local Mdetrend 0
-local stateG   0
+local stateG   1
 local Sdetrend 0
 
-local sameyear 0
-if `sameyear'==1 local app Sameyear
-local period Month
+#delimit ;
+local lName aguascalientes baja_california baja_california_sur campeche       
+   coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     
+   guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     
+   nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    
+   sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave 
+   yucatan zacatecas;
+local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     
+   Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      
+   Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      
+   Puebla Guanajuato Nayarit Tabasco Mexico Hidalgo Queretaro Colima          
+   Aguascalientes Morelos Tlaxcala DistritoFederal;
+local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 
+   15 13 22 6 1 17 29 9;
+#delimit cr
 
 ********************************************************************************
 *** (2) Generate Municipal file
 ********************************************************************************
 if `covPrep'==1 {
-insheet using "$COV1/Doctors/Doctors.csv", tab names
-gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
-replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
-destring medicalstaff, replace
+    insheet using "$COV1/Doctors/Doctors.csv", tab names
+    gen MedMissing=medicalstaff=="ND"|medicalstaff=="n. a"
+    replace medicalstaff="0" if medicalstaff=="ND"|medicalstaff=="n. a"
+    destring medicalstaff, replace
 
-expand 2 if year==2010
-expand 5 if year==2005
-bys year clave: gen n=_n
-replace year=2011 if year==2010&n==2
-foreach num of numlist 1(1)5 {
-	replace year=year-`num'+1 if year==2005&n==`num'
-	}
-drop n
-rename clave id
-rename estado state
-rename municipio municip
-tostring id, gen(nid)
-drop id
+    expand 2 if year==2010
+    expand 5 if year==2005
+    bys year clave: gen n=_n
+    replace year=2011 if year==2010&n==2
+    foreach num of numlist 1(1)5 {
+        replace year=year-`num'+1 if year==2005&n==`num'
+    }
+    drop n
+    rename clave id
+    rename estado state
+    rename municipio municip
+    tostring id, gen(nid)
+    drop id
 
-gen length=length(nid)
-gen zero="0" if length==4
-egen id=concat(zero nid)
-drop nid zero length
-save "$COV1/Doctors", replace
+    gen length=length(nid)
+    gen zero="0" if length==4
+    egen id=concat(zero nid)
+    drop nid zero length
+    save "$COV1/Doctors", replace
 
-insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
-foreach var of varlist planteles aulas bibliotecas labor talle {
-	gen `var'Missing=`var'=="ND"
-	replace `var'=subinstr(`var',".","",1)
-	replace `var'="0" if `var'=="ND"
-	destring `var', replace
-}
-expand 2 if year==2010
-expand 5 if year==2005
-bys year id: gen n=_n
-replace year=2011 if year==2010&n==2
-foreach num of numlist 1(1)5 {
-	replace year=year-`num'+1 if year==2005&n==`num'
-}
-drop n
-tostring id, gen(nid)
-drop id
-
-gen length=length(nid)
-gen zero="0" if length==4
-egen id=concat(zero nid)
-drop nid zero length
-save "$COV1/EducInf", replace
-
-foreach cv in Income Spending {
-	insheet using "$COV1/`cv'/`cv'.csv", comma names clear
-	drop if year<2001
-	expand 2 if year==2010
-	bys year id: gen n=_n
-	replace year=2011 if year==2010&n==2
-	drop n
-	cap tostring id, gen(nid)
-	cap gen nid=id
-	drop id
-
-	gen length=length(nid)
-	gen zero="0" if length==4
-	egen id=concat(zero nid)
-	drop nid zero length
-	save "$COV1/`cv'", replace
-}
-
-*EXPAND TO MONTHS
-foreach set in Doctors EducInf Income Spending {
-	use "$COV1/`set'"
-	drop if id==""
-	expand 12
-	bys id year: gen month=_n
-	drop if month>12
-	save, replace
-}
-
-foreach ENT of local lName {
-	insheet using "$COV2/`ENT'.csv", comma names clear
-	keep state number year trimeter desocup dsea
-	drop if year<2001|year>2011
-	rename trimeter trimester
-	rename desocup unemployment
-	rename dsea deseasonUnemployment
-	destring unemp, replace
-	destring desea, replace
-	expand 3
-	bys state year trimester: gen month=_n
-	replace month=month+3 if trimester=="II"
-	replace month=month+6 if trimester=="III"
-	replace month=month+9 if trimester=="IV"
-	save "$COV2/`ENT'", replace
-}
-clear
-
-foreach ENT of local lName {
-	append using "$COV2/`ENT'"
-}
-tostring number, gen(id)
-
-gen length=length(id)
-gen zero="0" if length==1
-egen stateid=concat(zero id)
-drop id zero length number
-
-save "$COV2/Labour", replace
+    insheet using "$COV1/EducInf/EducInf.csv", names delim(";") clear
+    foreach var of varlist planteles aulas bibliotecas labor talle {
+        gen `var'Missing=`var'=="ND"
+        replace `var'=subinstr(`var',".","",1)
+        replace `var'="0" if `var'=="ND"
+        destring `var', replace
+    }
+    expand 2 if year==2010
+    expand 5 if year==2005
+    bys year id: gen n=_n
+    replace year=2011 if year==2010&n==2
+    foreach num of numlist 1(1)5 {
+        replace year=year-`num'+1 if year==2005&n==`num'
+    }
+    drop n
+    tostring id, gen(nid)
+    drop id
+    
+    gen length=length(nid)
+    gen zero="0" if length==4
+    egen id=concat(zero nid)
+    drop nid zero length
+    save "$COV1/EducInf", replace
+    
+    foreach cv in Income Spending {
+        insheet using "$COV1/`cv'/`cv'.csv", comma names clear
+        drop if year<2001
+        expand 2 if year==2010
+        bys year id: gen n=_n
+        replace year=2011 if year==2010&n==2
+        drop n
+        cap tostring id, gen(nid)
+        cap gen nid=id
+        drop id
+        
+        gen length=length(nid)
+        gen zero="0" if length==4
+        egen id=concat(zero nid)
+        drop nid zero length
+        save "$COV1/`cv'", replace
+    }
+    
+    *EXPAND TO MONTHS
+    foreach set in Doctors EducInf Income Spending {
+        use "$COV1/`set'"
+        drop if id==""
+        expand 12
+        bys id year: gen month=_n
+        drop if month>12
+        save, replace
+    }
+    
+    foreach ENT of local lName {
+        insheet using "$COV2/`ENT'.csv", comma names clear
+        keep state number year trimeter desocup dsea
+        drop if year<2001|year>2011
+        rename trimeter trimester
+        rename desocup unemployment
+        rename dsea deseasonUnemployment
+        destring unemp, replace
+        destring desea, replace
+        expand 3
+        bys state year trimester: gen month=_n
+        replace month=month+3 if trimester=="II"
+        replace month=month+6 if trimester=="III"
+        replace month=month+9 if trimester=="IV"
+        save "$COV2/`ENT'", replace
+    }
+    clear
+    
+    foreach ENT of local lName {
+        append using "$COV2/`ENT'"
+    }
+    tostring number, gen(id)
+    
+    gen length=length(id)
+    gen zero="0" if length==1
+    egen stateid=concat(zero id)
+    drop id zero length number
+    
+    save "$COV2/Labour", replace
 }
 ********************************************************************************
 *** (2b) Merge covariate datasets
 ********************************************************************************
 if `mergeCV'==1 {
-	mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
-	*/ "$COV1/Spending", match(year month id) verbose
-	keep if _merge_S==3&_merge_I==3&_merge_E==3
-	drop _merge*
-	gen stateid=substr(id,1,2)
-
-	merge m:1 stateid year month using "$COV2/Labour"
-	drop _merge
-	save "$BIR/BirthCovariates", replace
-
-	merge m:1 stateid year using "$COV3/Contraception"
-	drop if _merge==2
-	drop _merge
-
-  *expand so one cell for each age 15-49 (expensive)
-	expand 35
-	bys id year month: gen Age=_n+14
-	save "$BIR/BirthCovariates", replace
+    mergemany 1:1 "$COV1/Doctors" "$COV1/EducInf" "$COV1/Income" /*
+    */ "$COV1/Spending", match(year month id) verbose
+    keep if _merge_S==3&_merge_I==3&_merge_E==3
+    drop _merge*
+    gen stateid=substr(id,1,2)
+    
+    merge m:1 stateid year month using "$COV2/Labour"
+    drop _merge
+    save "$BIR/BirthCovariates", replace
+    
+    merge m:1 stateid year using "$COV3/Contraception"
+    drop if _merge==2
+    drop _merge
+    
+    *expand so one cell for each age 15-49 (expensive)
+    expand 35
+    bys id year month: gen Age=_n+14
+    save "$BIR/BirthCovariates", replace
 }
-
+exit
 ********************************************************************************
 *** (2c) Import births, rename
 ********************************************************************************
 if `import'==1 {
-	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
+	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
 		dis "Appending `yr'"
 		append using "$DAT/NACIM`yr'.dta"
 	}
@@ -260,26 +247,19 @@ if `import'==1 {
 	replace ano_nac=. if ano_nac==9999
 
 	gen birth=1 /*if ano_nac==ano_reg*/
-	keep if ano_nac>=2001&ano_nac<2012
+	keep if ano_nac>=2001&ano_nac<2013
 
 
 	drop if mun_ocurr==.
 	drop if mes_nac==.
 
-	if `sameyear'==1 keep if ano_nac==ano_reg|ano_nac==ano_reg-1
-	
-	if `"`period'"'=="Year" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
-	}
-	else if `"`period'"'=="Month" {
-		collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
-		rename mes_nac month
-	}
+	collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
 
 	rename edad_madn Age
 	rename ent_ocurr birthStateNum
 	rename mun_ocurr birthMunNum
 	rename ano_nac year
+	rename mes_nac month
 
 	tostring birthStateNum, gen(entN)
 	gen length=length(entN)
@@ -295,7 +275,7 @@ if `import'==1 {
 	drop length zero munN
 
 	egen id=concat(stateid munid)
-	save "$BIR/BirthsMonth`app'", replace
+	save "$BIR/BirthsMonth", replace
 }
 
 ********************************************************************************
@@ -329,9 +309,9 @@ if `mergeB'==1 {
 	dis "These are left in the dataset with age recorded as missing."
 	drop _merge
 
-	gen Abortion      = stateid=="09"&year>2008
-	gen AbortionClose = stateid=="15"&year>2008
 	gen yearmonth     = year+(month-1)/12
+	gen Abortion      = stateid=="09"&yearm>2008
+	gen AbortionClose = stateid=="15"&yearm>2008
 
 	label var birthStateNum "State identifier (numerical)"
 	label var birthMunNum   "Municipal identifier (numerical)"
@@ -362,52 +342,28 @@ if `mergeB'==1 {
 	label var yearmonth     "Year and month added together (numerical)"
 
 	label data "Birth data and covariates at level of Municipality*Month*Age"
-	drop if year>2010
+	drop if year>2012
 
   *******THIS SUBSETS TO ONLY REGIONAL*********
   *******keep if rural<=0.4
   *******THIS SUBSETS TO ONLY REGIONAL*********
   merge m:1 id using "$MUN/metropolitan", gen(_metMerge)
   
-  
-  save "$BIR/MunicipalBirths`app'.dta", replace
+  save "$BIR/MunicipalBirths.dta", replace
   
 }
 
 ********************************************************************************
-*** (3) Deseason (de-month) municipal file
-********************************************************************************
-if `Mdetrend'==1 {
-	use "$BIR/MunicipalBirths`app'.dta"
-	drop if year>=2010
-	tab month, gen(_Month)
-	bys id Age: gen trend=_n
-
-	gen birthdetrend=.
-	drop _Month12
-
-	levelsof id, local(SSid)
-	foreach S of local SSid {
-		foreach A of numlist 15(1)49 {
-			dis "Detrending Age==`A' in Municipality `S'"
-
-			reg birth _Month* trend if Age==`A'&id=="`S'"
-			predict resid if Age==`A'&id=="`S'", r 
-			sum birth if Age==`A'&id=="`S'"
-			replace birthdetrend=`r(mean)'+resid if Age==`A'&id=="`S'"
-
-			drop resid
-		}
-	}
-	save "$BIR/MunicipalBirths_deseason`app'.dta", replace
-}
-
-********************************************************************************
-*** (4) Generate State file
+*** (3) Generate State file
 ********************************************************************************
 if `stateG' {
-	use "$BIR/MunicipalBirths`app'.dta", clear
+	use "$BIR/MunicipalBirths.dta", clear
 
+  *****
+  **** KEEPING ONLY MUNICIPAL
+  *****
+  *keep if _metMerge==3
+  
 	replace medicalstaff=. if MedMissing==1
 	replace planteles=. if plantelesMissing==1
 	replace laboratorios=. if laboratoriosMissing==1
@@ -416,7 +372,7 @@ if `stateG' {
 	replace talleres=. if talleresMissing==1
 
 	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows rural (sum) birth,           /*
+	*/ subsidies unemployment any* adolescentKnows /*rural*/ (sum) birth,       /*
 	*/ by(stateid state year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
@@ -442,7 +398,7 @@ if `stateG' {
 		local ++i
 	}
 	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
-	drop if year<2001|year>2010&year!=.
+	drop if year<2001|year>2011&year!=.
 	drop _merge
 	
 	gen yearmonth= year + (month-1)/12
@@ -468,37 +424,8 @@ if `stateG' {
 
 
 	label data "Birth data and covariates at level of State*Month*Age"
-	save "$BIR/StateBirths`app'.dta", replace
+	save "$BIR/StateBirths.dta", replace
 }
-
-********************************************************************************
-*** (5) Deseason (de-month) State file
-********************************************************************************
-if `Sdetrend'==1 {
-	use "$BIR/StateBirths`app'.dta"
-	drop if year>=2010
-	tab month, gen(_Month)
-	bys stateid Age: gen trend=_n
-
-	gen birthdetrend=.
-	drop _Month12
-
-	levelsof stateid, local(SSid)
-	foreach A of numlist 15(1)49 {
-		foreach S of local SSid {
-			dis "Detrending Age==`A' in State `S'"
-
-			reg birth _Month* trend if Age==`A'&stateid=="`S'"
-			predict resid if Age==`A'&stateid=="`S'", r 
-			sum birth if Age==`A'&stateid=="`S'"
-			replace birthdetrend=`r(mean)'+resid if Age==`A'&stateid=="`S'"
-
-			drop resid
-		}
-	}
-	save "$BIR/StateBirths_deseason`app'.dta", replace
-}
-
 
 ********************************************************************************
 *** (X) Close
