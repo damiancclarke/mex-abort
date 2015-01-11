@@ -26,6 +26,7 @@ ly the following data is required:
 
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
+             mailto:hanna.muhlrad@economics.ox.ac.uk
 
 
 Past major versions
@@ -51,29 +52,27 @@ global LOG  "~/investigacion/2014/MexAbort/Log"
 global COV1 "~/investigacion/2014/MexAbort/Data/Municip"
 global COV2 "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
 global COV3 "~/investigacion/2014/MexAbort/Data/Contracep"
-global MUN "~/investigacion/2014/MexAbort/Data/Geo"
+global MET  "~/investigacion/2014/MexAbort/Data/Geo"
 
 log using "$LOG/birthGenerate.txt", text replace
-
-local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
-*/ totalout subsidies unemployment condom* any* adolescentKnows 
 
 foreach uswado in mergemany {
 	cap which `uswado'
 	if _rc!=0 ssc install `uswado'
 }
 
-local covPrep  1
-local mergeCV  1
+local covPrep  0
+local mergeCV  0
+local import   1
+
 
 local rural    0
-local import   0
 local mergeB   0
-local Mdetrend 0
 local stateG   1
-local Sdetrend 0
 
 #delimit ;
+local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
+   totalout subsidies unemployment condom* any* adolescentKnows;
 local lName aguascalientes baja_california baja_california_sur campeche       
    coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     
    guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     
@@ -200,6 +199,7 @@ if `covPrep'==1 {
     
     save "$COV2/Labour", replace
 }
+
 ********************************************************************************
 *** (2b) Merge covariate datasets
 ********************************************************************************
@@ -217,86 +217,80 @@ if `mergeCV'==1 {
     merge m:1 stateid year using "$COV3/Contraception"
     drop if _merge==2
     drop _merge
-    
-    *expand so one cell for each age 15-49 (expensive)
+
+    ****        expand so one cell for each age 15-49 (expensive)         ****
+    ****     NOTE: there are 4,620 observations for each municipality     ****
+    ****  This is 11 years, by 12 months, by 35 age groups: 11*12*35=4620 ****
+    ****  There are 2456 municipalities in Mexico, so total obs=2456*4620 ****
+
     expand 35
     bys id year month: gen Age=_n+14
     save "$BIR/BirthCovariates", replace
 }
-exit
+
 ********************************************************************************
 *** (2c) Import births, rename
 ********************************************************************************
 if `import'==1 {
-	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
-		dis "Appending `yr'"
-		append using "$DAT/NACIM`yr'.dta"
-	}
+    foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
+        dis "Appending `yr'"
+        append using "$DAT/NACIM`yr'.dta"
+    }
 
-	foreach v of varlist mun_resid mun_ocurr {
-		replace `v'=. if `v'==999
-	}
-	foreach v of varlist tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac/*
-	*/ mes_nac dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo hijos_sobr {
-		replace `v'=. if `v'==99
-	}
-	foreach v of varlist sexo tipo_nac lugar_part q_atendio edociv_mad escol_mad /*
-	*/ escol_pad act_mad act_pad fue_prese {
-		replace `v'=. if `v'==99
-	}
-	replace ano_nac=. if ano_nac==9999
+    #delimit ;
+    local v999 mun_resid mun_ocurr;
+    local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac mes_nac
+               dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo act_mad 
+               hijos_sobr sexo tipo_nac lugar_part q_atendio edociv_mad  act_pad
+	             escol_pad escol_mad fue_prese;
+    #delimit cr
+    
+    foreach v of local v999 {
+        replace `v'=. if `v'==999
+    }
+    foreach v of local v99  {
+        replace `v'=. if `v'==99
+    }
+    replace ano_nac=. if ano_nac==9999
 
-	gen birth=1 /*if ano_nac==ano_reg*/
-	keep if ano_nac>=2001&ano_nac<2013
-
-
-	drop if mun_ocurr==.
-	drop if mes_nac==.
-
-	collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
-
-	rename edad_madn Age
-	rename ent_ocurr birthStateNum
-	rename mun_ocurr birthMunNum
-	rename ano_nac year
-	rename mes_nac month
-
-	tostring birthStateNum, gen(entN)
-	gen length=length(entN)
-	gen zero="0" if length==1
-	egen stateid=concat(zero entN)
-	drop length zero entN
-
-	tostring birthMunNum, gen(munN)
-	gen length=length(munN)
-	gen zero="0" if length==2
-	replace zero="00" if length==1
-	egen munid=concat(zero munN)
-	drop length zero munN
-
-	egen id=concat(stateid munid)
-	save "$BIR/BirthsMonth", replace
-}
-
-********************************************************************************
-*** (2d) Generate rurality data from populations in birth data
-********************************************************************************
-if `rural'==1 {
-    use "$DAT/NACIM12.dta"
+    gen birth=1
     gen rural=tloc_regis <= 3
-    collapse rural, by(ent_resid mun_resid)
+    keep if ano_nac>=2001&ano_nac<2012
 
-    rename ent_resid birthStateNum
-    rename mun_resid birthMunNum
-    lab dat "Percent of localities which are rural by municipio (from births)"
-    save "$DAT2/Rurality", replace
+    drop if mun_ocurr==.
+    drop if mes_nac==.
+
+    collapse rural (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
+
+    rename edad_madn Age
+    rename ent_ocurr birthStateNum
+    rename mun_ocurr birthMunNum
+    rename ano_nac year
+    rename mes_nac month
+
+    tostring birthStateNum, gen(entN)
+    gen length=length(entN)
+    gen zero="0" if length==1
+    egen stateid=concat(zero entN)
+    drop length zero entN
+
+    tostring birthMunNum, gen(munN)
+    gen length=length(munN)
+    gen zero="0" if length==2
+    replace zero="00" if length==1
+    egen munid=concat(zero munN)
+    drop length zero munN
+
+    egen id=concat(stateid munid)
+    save "$BIR/BirthsMonth", replace
 }
+exit
 
 ********************************************************************************
 *** (2e) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-	use "$BIR/BirthsMonth`app'", clear
+	use "$BIR/BirthsMonth", clear
 	drop if Age<15|(Age>49&Age!=.)
   *merge m:1 birthStateNum birthMunNum using "$DAT2/Rurality"
   *drop if _merge!=3
@@ -312,6 +306,10 @@ if `mergeB'==1 {
 	gen yearmonth     = year+(month-1)/12
 	gen Abortion      = stateid=="09"&yearm>2008
 	gen AbortionClose = stateid=="15"&yearm>2008
+
+  merge m:1 id using "$MET/metropolitan", gen(_metMerge)
+  gen metropolitan=_metMerge==3
+  drop _metMerge
 
 	label var birthStateNum "State identifier (numerical)"
 	label var birthMunNum   "Municipal identifier (numerical)"
@@ -340,15 +338,14 @@ if `mergeB'==1 {
 	label var anyRecent     "% of adults using any contraceptive at recent intercou"
 	label var Abortion      "Availability of abortion (1 in DF post reform)"
 	label var yearmonth     "Year and month added together (numerical)"
+	label var metropolitan  "Indicator for if the municipality is metropolitan"
 
 	label data "Birth data and covariates at level of Municipality*Month*Age"
 	drop if year>2012
 
   *******THIS SUBSETS TO ONLY REGIONAL*********
   *******keep if rural<=0.4
-  *******THIS SUBSETS TO ONLY REGIONAL*********
-  merge m:1 id using "$MUN/metropolitan", gen(_metMerge)
-  
+  *******THIS SUBSETS TO ONLY REGIONAL*********  
   save "$BIR/MunicipalBirths.dta", replace
   
 }
@@ -360,7 +357,7 @@ if `stateG' {
 	use "$BIR/MunicipalBirths.dta", clear
 
   *****
-  **** KEEPING ONLY MUNICIPAL
+  **** KEEPING ONLY METROPOLITAN
   *****
   *keep if _metMerge==3
   
