@@ -63,26 +63,23 @@ foreach uswado in mergemany {
 
 local covPrep  0
 local mergeCV  0
-local import   1
-
-
-local rural    0
+local import   0
 local mergeB   0
 local stateG   1
 
 #delimit ;
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
-   totalout subsidies unemployment condom* any* adolescentKnows;
-local lName aguascalientes baja_california baja_california_sur campeche       
-   coahuila_de_zaragoza colima chiapas chihuahua distrito_federal durango     
-   guanajuato guerrero hidalgo jalisco mexico michoacan_de_ocampo morelos     
-   nayarit nuevo_leon oaxaca puebla queretaro quintana_roo san_luis_potosi    
+           totalout subsidies unemployment condom* any* adolescentKnows;
+local lName aguascalientes   baja_california   baja_california_sur   campeche       
+   coahuila_de_zaragoza  colima  chiapas  chihuahua  distrito_federal durango     
+   guanajuato guerrero  hidalgo  jalisco  mexico  michoacan_de_ocampo morelos     
+   nayarit  nuevo_leon  oaxaca  puebla queretaro quintana_roo san_luis_potosi    
    sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave 
    yucatan zacatecas;
 local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     
-   Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      
-   Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      
-   Puebla Guanajuato Nayarit Tabasco Mexico Hidalgo Queretaro Colima          
+   Zacatecas  BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      
+   Guerrero  SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      
+   Puebla  Guanajuato  Nayarit  Tabasco  Mexico  Hidalgo Queretaro Colima          
    Aguascalientes Morelos Tlaxcala DistritoFederal;
 local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 
    15 13 22 6 1 17 29 9;
@@ -229,7 +226,7 @@ if `mergeCV'==1 {
 }
 
 ********************************************************************************
-*** (2c) Import births, rename
+*** (3) Import births, rename
 ********************************************************************************
 if `import'==1 {
     foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
@@ -284,144 +281,134 @@ if `import'==1 {
     egen id=concat(stateid munid)
     save "$BIR/BirthsMonth", replace
 }
-exit
 
 ********************************************************************************
-*** (2e) Merge with covariates, generate treatments
+*** (4) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-	use "$BIR/BirthsMonth", clear
-	drop if Age<15|(Age>49&Age!=.)
-  *merge m:1 birthStateNum birthMunNum using "$DAT2/Rurality"
-  *drop if _merge!=3
-  *drop _merge
+    use "$BIR/BirthsMonth", clear
+    drop if Age<15|Age>49
   
-  merge 1:1 id year month Age using "$BIR/BirthCovariates"
-	replace birth=0 if _merge==2
+    merge 1:1 id year month Age using "$BIR/BirthCovariates"
+    drop if _merge==1
+    *31 obs from 23010.
 
-	dis "note that in 39094 cases, the mother's age of birth isn't recorded"
-	dis "These are left in the dataset with age recorded as missing."
-	drop _merge
+    replace birth=0 if _merge==2
+    drop _merge birthStateNum birthMunNum
 
-	gen yearmonth     = year+(month-1)/12
-	gen Abortion      = stateid=="09"&yearm>2008
-	gen AbortionClose = stateid=="15"&yearm>2008
+    gen yearmonth     = year+(month-1)/12
+    gen Abortion      = stateid=="09"&yearm>=2008
+    gen AbortionClose = stateid=="15"&yearm>=2008
 
-  merge m:1 id using "$MET/metropolitan", gen(_metMerge)
-  gen metropolitan=_metMerge==3
-  drop _metMerge
+    merge m:1 id using "$MET/metropolitan", gen(_metMerge)
+    gen metropolitan=_metMerge==3
+    drop _metMerge
 
-	label var birthStateNum "State identifier (numerical)"
-	label var birthMunNum   "Municipal identifier (numerical)"
-	label var Age           "Mother's age at birth"
-	label var month         "Month of birth (1-12)"
-	label var year          "Year of birth (2001-2011)"
-	label var stateid       "State identifier (string)"
-	label var munid         "Municipal identifier (string)"
-	label var id            "Concatenation of state and municipal id (string)"
-	label var state         "State name (in words)"
-	label var municip       "Municipality name (in words)"
-	label var medicalstaff  "Number of medical staff in the municipality"
-	label var MedMissing    "Indicator for missing obs on medical staff"
-	label var planteles     "Number of educational establishments in municipality"
-	label var aulas         "Number of classrooms in municipality"
-	label var bibliotecas   "Number of libraries in municipality"
-	label var laboratorios  "Number of laboratories (study) in the municipality"
-	label var talleres      "Number of workshops in the municipality"
-	label var trimester     "Trimester of the year (I-IV)"
-	label var unemployment  "Unemployment rate in the State"
-	label var condomFirstTe "% teens reporting using condoms at first intercourse"
-	label var condomRecentT "% teens reporting using condoms at recent intercourse"
-	label var anyFirstTeen  "% of teens using any contraceptive method"
-	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
-	label var condomRecent  "% of adults using condoms at recent intercourse"
-	label var anyRecent     "% of adults using any contraceptive at recent intercou"
-	label var Abortion      "Availability of abortion (1 in DF post reform)"
-	label var yearmonth     "Year and month added together (numerical)"
-	label var metropolitan  "Indicator for if the municipality is metropolitan"
+    label var Age           "Mother's age at birth"
+    label var month         "Month of birth (1-12)"
+    label var year          "Year of birth (2001-2011)"
+    label var stateid       "State identifier (string)"
+    label var munid         "Municipal identifier (string)"
+    label var id            "Concatenation of state and municipal id (string)"
+    label var state         "State name (in words)"
+    label var municip       "Municipality name (in words)"
+    label var medicalstaff  "Number of medical staff in the municipality"
+    label var MedMissing    "Indicator for missing obs on medical staff"
+    label var planteles     "Number of educational establishments in municip"
+    label var aulas         "Number of classrooms in municipality"
+    label var bibliotecas   "Number of libraries in municipality"
+    label var laboratorios  "Number of laboratories (study) in the municip"
+    label var talleres      "Number of workshops in the municipality"
+    label var trimester     "Trimester of the year (I-IV)"
+    label var unemployment  "Unemployment rate in the State"
+    label var condomFirstTe "% teens reporting using condoms at first sex"
+    label var condomRecentT "% teens reporting using condoms in recent sex"
+    label var anyFirstTeen  "% of teens using any contraceptive method"
+    label var adolescentKno "Percent of teens knowing any contraceptives"
+    label var condomRecent  "% of adults using condoms at recent sex"
+    label var anyRecent     "% of adults using any contraceptive at recent sex"
+    label var Abortion      "Availability of abortion (1 in DF post reform)"
+    label var yearmonth     "Year and month added together (numerical)"
+    label var metropolitan  "Indicator for if the municip is metropolitan"
+    label var rural         "Proportion of people in birth data from rural"
 
-	label data "Birth data and covariates at level of Municipality*Month*Age"
-	drop if year>2012
-
-  *******THIS SUBSETS TO ONLY REGIONAL*********
-  *******keep if rural<=0.4
-  *******THIS SUBSETS TO ONLY REGIONAL*********  
-  save "$BIR/MunicipalBirths.dta", replace
-  
+    
+    label data "Birth data and covariates at level of Municipality*Month*Age"
+    save "$BIR/MunicipalBirths.dta", replace
 }
 
 ********************************************************************************
-*** (3) Generate State file
+*** (5) Generate State file
 ********************************************************************************
 if `stateG' {
-	use "$BIR/MunicipalBirths.dta", clear
-
-  *****
-  **** KEEPING ONLY METROPOLITAN
-  *****
-  *keep if _metMerge==3
+    use "$BIR/MunicipalBirths.dta", clear
   
-	replace medicalstaff=. if MedMissing==1
-	replace planteles=. if plantelesMissing==1
-	replace laboratorios=. if laboratoriosMissing==1
-	replace aulas=. if aulasMissing==1
-	replace bibliotecas=. if bibliotecasMissing==1
-	replace talleres=. if talleresMissing==1
+    replace medicalstaff=. if MedMissing==1
+    replace planteles=.    if plantelesMissing==1
+    replace laboratorios=. if laboratoriosMissing==1
+    replace aulas=.        if aulasMissing==1
+    replace bibliotecas=.  if bibliotecasMissing==1
+    replace talleres=.     if talleresMissing==1
 
-	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows /*rural*/ (sum) birth,       /*
-	*/ by(stateid state year month Age) fast
+    #delimit ;
+    local col medicalstaff planteles aulas bibliotecas totalinc totalout condom*
+              subsidies unemployment any* adolescentKnows;
+    #delimit cr
+    
+    collapse `col' (sum) birth, by(stateid state year month Age) fast
 
-	gen MedMissing         = medicalstaff ==.
-	gen plantelesMissing   = planteles    ==.
-	gen aulasMissing       = aulas        ==.
-	gen bibliotecasMissing = bibliotecas  ==.
+    gen MedMissing         = medicalstaff ==.
+    gen plantelesMissing   = planteles    ==.
+    gen aulasMissing       = aulas        ==.
+    gen bibliotecasMissing = bibliotecas  ==.
 	
-	replace medicalstaff  =0 if medicalstaff ==.
-	replace planteles     =0 if planteles    ==.
-	replace aulas         =0 if planteles    ==.
-	replace bibliotecas   =0 if bibliotecas  ==.	
+    replace medicalstaff  =0 if medicalstaff ==.
+    replace planteles     =0 if planteles    ==.
+    replace aulas         =0 if planteles    ==.
+    replace bibliotecas   =0 if bibliotecas  ==.	
 	
-	gen stateName=""
-	tokenize `popName'
-	local i=1
-	foreach num of numlist `popNum' {
-		if `num'<10 {
-			replace stateName="``i''" if stateid=="0`num'"
-		}
-		if `num' >=10 {
-			replace stateName="``i''" if stateid=="`num'"
-		}
-		local ++i
-	}
-	merge 1:1 stateName Age month year using "$DAT2/populationStateYearMonth1549.dta"
-	drop if year<2001|year>2011&year!=.
-	drop _merge
+    gen stateName=""
+    tokenize `popName'
+    local i=1
+    foreach num of numlist `popNum' {
+        if `num'<10 {
+            replace stateName="``i''" if stateid=="0`num'"
+        }
+        if `num' >=10 {
+            replace stateName="``i''" if stateid=="`num'"
+        }
+        local ++i
+    }
+
+    local popfile "populationStateYearMonth1549.dta"
+    merge 1:1 stateName Age month year using "$DAT2/`popfile'"
+    drop if year<2001|year>2011&year!=.
+    drop _merge
 	
-	gen yearmonth= year + (month-1)/12
-	gen birthrate  = birth/imputePop
-	gen DF=stateNum=="32"
+    gen yearmonth= year + (month-1)/12
+    gen birthrate  = birth/imputePop
+    gen DF=stateNum=="32"
 
-	label var DF            "Indicator for Mexico D.F."
-	label var stateName     "State name from population data"
-	label var stateNum      "State number (string) from population data"	
-	label var medicalstaff  "Number of medical staff in the state (average)"
-	label var MedMissing    "Indicator for missing obs on medical staff"
-	label var planteles     "Number of educational establishments in municipality"
-	label var aulas         "Number of classrooms in municipality"
-	label var bibliotecas   "Number of libraries in municipality"
-	label var unemployment  "Unemployment rate in the State"
-	label var condomFirstTe "% teens reporting using condoms at first intercourse"
-	label var condomRecentT "% teens reporting using condoms at recent intercourse"
-	label var anyFirstTeen  "% of teens using any contraceptive method"
-	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
-	label var condomRecent  "% of adults using condoms at recent intercourse"
-	label var anyRecent     "% of adults using any contraceptive at recent intercou"
-	label var yearmonth     "Year and month added together (numerical)"
+    label var DF            "Indicator for Mexico D.F."
+    label var stateName     "State name from population data"
+    label var stateNum      "State number (string) from population data"	
+    label var medicalstaff  "Number of medical staff in the state (average)"
+    label var MedMissing    "Indicator for missing obs on medical staff"
+    label var planteles     "Number of educational establishments in municip"
+    label var aulas         "Number of classrooms in municipality"
+    label var bibliotecas   "Number of libraries in municipality"
+    label var unemployment  "Unemployment rate in the State"
+    label var condomFirstTe "% teens reporting using condoms at first sex"
+    label var condomRecentT "% teens reporting using condoms at recent sex"
+    label var anyFirstTeen  "% of teens using any contraceptive method"
+    label var adolescentKno "Percent of teens knowing any contraceptives"
+    label var condomRecent  "% of adults using condoms at recent sex"
+    label var anyRecent     "% of adults using any contraceptive at recent sex"
+    label var yearmonth     "Year and month added together (numerical)"
 
 
-	label data "Birth data and covariates at level of State*Month*Age"
-	save "$BIR/StateBirths.dta", replace
+    label data "Birth data and covariates at level of State*Month*Age"
+    save "$BIR/StateBirths.dta", replace
 }
 
 ********************************************************************************
