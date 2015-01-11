@@ -5,13 +5,16 @@
 This script genrates a number of output files based on birth data and covariates 
 produced from the script municipPrep.py as well as population data produced from
 poplnPrep.do and contraceptive data from contracepPrep.do. It produces the foll-
-owing four files:
+owing two files:
 
 	> MunicipalBirths.dta
 	> StateBirths.dta
 
 where the difference between each file is the level of aggregation (State is hi-
-gher than Municipal).
+gher than Municipal). Each file contains one line per month*year*age (15-49), w-
+ith the number of births that women of the age group had in that time period and
+area (either municipality or State).  This includes cases where zero births occ-
+urred in the month in the particular area.
 
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
@@ -23,7 +26,7 @@ ly the following data is required:
    > Employment figure from each state from INEGI (1 sheet per state)
    > NACIM01.dta-NACIM12.dta: raw birth records from INEGI
    > populationStateYearMonth1549.dta: total population at a state level by time
-
+   > metropolitan.dta: A list of which municipalities are metropolitan 
 
     contact: mailto:damian.clarke@economics.ox.ac.uk
              mailto:hanna.muhlrad@economics.ox.ac.uk
@@ -310,8 +313,8 @@ if `mergeB'==1 {
     label var stateid       "State identifier (string)"
     label var munid         "Municipal identifier (string)"
     label var id            "Concatenation of state and municipal id (string)"
-    label var state         "State name (in words)"
-    label var municip       "Municipality name (in words)"
+    label var state         "State name in words"
+    label var municip       "Municipality name in words"
     label var medicalstaff  "Number of medical staff in the municipality"
     label var MedMissing    "Indicator for missing obs on medical staff"
     label var planteles     "Number of educational establishments in municip"
@@ -362,10 +365,10 @@ if `stateG' {
     gen aulasMissing       = aulas        ==.
     gen bibliotecasMissing = bibliotecas  ==.
 	
-    replace medicalstaff  =0 if medicalstaff ==.
-    replace planteles     =0 if planteles    ==.
-    replace aulas         =0 if planteles    ==.
-    replace bibliotecas   =0 if bibliotecas  ==.	
+    replace medicalstaff  = 0 if medicalstaff ==.
+    replace planteles     = 0 if planteles    ==.
+    replace aulas         = 0 if planteles    ==.
+    replace bibliotecas   = 0 if bibliotecas  ==.	
 	
     gen stateName=""
     tokenize `popName'
