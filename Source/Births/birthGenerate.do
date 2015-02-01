@@ -66,9 +66,9 @@ foreach uswado in mergemany {
 
 local covPrep  0
 local mergeCV  0
-local import   0
-local mergeB   0
-local stateG   1
+local import   1
+local mergeB   1
+local stateG   0
 
 #delimit ;
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
@@ -333,6 +333,7 @@ if `mergeB'==1 {
     label var Abortion      "Availability of abortion (1 in DF post reform)"
     label var yearmonth     "Year and month added together (numerical)"
     label var metropolitan  "Indicator for if the municip is metropolitan"
+    label var metroPop      "Population of metropolitan area in 2010"
     label var rural         "Proportion of people in birth data from rural"
 
     
