@@ -77,6 +77,7 @@ local event   0
 local trend   0
 
 local Mtrend  1
+local Mreg    1
 
 ********************************************************************************
 *** (1b) Data and Specific Decisions
@@ -287,7 +288,7 @@ if `event'==1 {
 *** (4) Municipal Analysis
 ********************************************************************************
 use "$BIR/MunicipalBirths.dta", clear
-keep if yearmonth>=2001&yearmonth<=2011
+keep if yearmonth>=2001&yearmonth<2011
 
 gen all=1
 gen ageGroup=.
@@ -299,35 +300,114 @@ replace ageGroup=4 if Age>=40&Age<49
 label define a 1 "15-19" 2 "20-29" 3 "30-39" 4 "40+"
 label values ageGroup a
 
+local cond all==1 metropolitan==1 metropolitan==1&metroPop>1000000 /*
+*/ metropolitan==1&metroPop>500000
+local Cname All Metropolitan VeryLargeMetrop LargeMetrop
+
 ********************************************************************************
-*** (4) Municipal Analysis
+*** (4a) Graph trends All
 ********************************************************************************
 if `Mtrend'==1 {
-    local cond all==1 metropolitan==1 metropolitan==1&metroPop>1000000 /*
-    */ metropolitan==1&metroPop>500000
-    local Cname All Metropolitan VeryLargeMetrop LargeMetrop
     tokenize `Cname'
-
-    gen MexMetrop     = "Zona metropolitana del Valle de México"
-    replace MexMetrop = 2 if state == "DISTRITO FEDERAL"
+    local o $GRA/Munic
+    
+    gen MexMetrop = state == "MEXICO"
+    replace MexMetrop = 2 if state   == "DISTRITO FEDERAL"
 
     foreach c of local cond {
         preserve
         keep if `c'
-        collapse (sum) birth, by(year MexMetrop) 
-        
-         #delimit ;
-        twoway line year birth if MexMetrop==2 || line year birth if MexMetrop==1
-        || line year birth if MexMetrop==0, title("Births Per Year, `1'")
-        ytitle("Number of Births") xtitle("Year") xline(2008, lpat(dash))
-        scheme(s1mono) legend(label(1 "Mexico DF") label(2 "Mexico Metropolitan")
-                              label(3 "Not Mexico City"));
-        save "$GRA/MunicipalTrend_`c'.eps", as(eps) replace;
+        collapse (sum) birth, by(year MexMetrop ageGroup) 
+        count
+        foreach age of numlist 1(1)4 {
+        #delimit ;
+            twoway connect birth year if MexMetrop==2&ageGroup==`age', yaxis(1)
+            || connect birth year if MexMetrop==1&ageGroup==`age', yaxis(1)
+            || connect birth year if MexMetrop==0&ageGroup==`age', yaxis(2)
+            title("Births Per Year, `1': Age Group `age'")
+            ytitle("Number of Births") xtitle("Year") xline(2007.2, lpat(dash))
+            scheme(s1mono) legend(label(1 "Mexico DF")
+                                  label(2 "Mexico State")
+                                  label(3 "Other"));
+            graph export "`o'/MunicipalTrend_`1'_age`age'.eps", as(eps) replace;
+            #delimit cr
+        }
+
+        collapse (sum) birth, by(year MexMetrop)
+        count
+        #delimit ;
+        twoway connect birth year if MexMetrop==2, yaxis(1)
+        || connect birth year if MexMetrop==1, yaxis(1)
+        || connect birth year if MexMetrop==0, yaxis(2) xtitle("Year") 
+        title("Births Per Year, `1': All") ytitle("Number of Births")
+        xline(2007.2, lpat(dash)) scheme(s1mono)
+        legend(label(1 "Mexico DF") label(2 "Mexico State")
+               label(3 "Other"));
+        graph export "`o'/MunicipalTrend_`1'_All.eps", as(eps) replace;
         #delimit cr
         restore
         macro shift
     }
 }
+
+********************************************************************************
+*** (4b) Regressions
+********************************************************************************
+if `Mreg'==1 {
+    tokenize `Cname'
+    cap mkdir "$REG/Munic"
+    local o $REG/Munic
+    
+    gen MexMetrop = state == "MEXICO"
+    replace MexMetrop = 2 if state   == "DISTRITO FEDERAL"
+    gen abort      = MexMetrop==2&year>=2008
+    gen abortClose = MexMetrop==1&year>=2008
+
+    local lag=1
+    foreach l of numlist 2007(-1)2003 {
+        gen abortLag`lag'=MexMetrop==2&year==`l'
+        local ++lag
+    }
+    local lead=0
+    foreach l of numlist 2008(1)2010 {
+        gen abortLead`lead'=MexMetrop==2&year==`l'
+        local ++lead
+    }
+    
+    foreach c of local cond {
+        cap rm "`o'/Municip`1'.xls"
+        cap rm "`o'/Municip`1'.txt"
+
+        preserve
+        keep if `c'
+        collapse MexMetrop abort* (sum) birth, by(year id ageGroup)
+        destring id, gen(municip)
+        local m municip
+        
+        count
+        foreach age of numlist 1(1)4 {
+            areg birth i.year abort if ageGroup==`age', absorb(`m') cluster(`m')
+            outreg2 abort using "`o'/Municip`1'.xls", append
+            areg birth i.year abort abortC if ageGroup==`age', absorb(`m') cluster(`m')
+            outreg2 abort* using "`o'/Municip`1'.xls", append
+            areg birth i.year abortL* if ageGroup==`age', absorb(`m') cluster(`m')
+            outreg2 abort* using "`o'/Municip`1'.xls", append
+        }
+
+        collapse MexMetrop abort* (sum) birth, by(year id)
+        count
+        areg birth i.year abort, absorb(`m') cluster(`m')
+        outreg2 abort using "`o'/Municip`1'.xls", append
+        areg birth i.year abort abortC, absorb(`m') cluster(`m')
+        outreg2 abort* using "`o'/Municip`1'.xls", append
+        areg birth i.year abortL*, absorb(`m') cluster(`m')
+        outreg2 abort* using "`o'/Municip`1'.xls", append
+
+        restore
+        macro shift
+    }
+}
+
 ********************************************************************************
 *** (X) Clean
 ********************************************************************************
