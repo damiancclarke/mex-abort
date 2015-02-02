@@ -76,7 +76,7 @@ local reg     0
 local event   0
 local trend   0
 
-local Mtrend  1
+local Mtrend  0
 local Mreg    1
 
 ********************************************************************************
@@ -358,13 +358,13 @@ if `Mreg'==1 {
     cap mkdir "$REG/Munic"
     local o $REG/Munic
     
-    gen MexMetrop = state == "MEXICO"
-    replace MexMetrop = 2 if state   == "DISTRITO FEDERAL"
+    cap gen MexMetrop = state == "MEXICO"
+    cap replace MexMetrop = 2 if state   == "DISTRITO FEDERAL"
     gen abort      = MexMetrop==2&year>=2008
     gen abortClose = MexMetrop==1&year>=2008
 
     local lag=1
-    foreach l of numlist 2007(-1)2003 {
+    foreach l of numlist 2007(-1)2002 {
         gen abortLag`lag'=MexMetrop==2&year==`l'
         local ++lag
     }
@@ -396,6 +396,8 @@ if `Mreg'==1 {
 
         collapse MexMetrop abort* (sum) birth, by(year id)
         count
+        destring id, gen(municip)
+
         areg birth i.year abort, absorb(`m') cluster(`m')
         outreg2 abort using "`o'/Municip`1'.xls", append
         areg birth i.year abort abortC, absorb(`m') cluster(`m')
