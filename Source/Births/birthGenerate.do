@@ -269,7 +269,7 @@ if `import'==1 {
     keep if ano_nac>=2001&ano_nac<2012
 
     if `yr3'==1 {
-        local difyr=ano_reg-ano_nac
+        gen difyr=ano_reg-ano_nac
         keep if difyr>=0&difyr<=3
     }
     drop if mun_ocurr==.
