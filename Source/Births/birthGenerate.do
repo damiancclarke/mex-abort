@@ -65,10 +65,15 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  1
-local import   0
+local mergeCV  0
+local import   1
 local mergeB   1
 local stateG   1
+local yr3      1
+
+if `yr3'==1 local fileend window3
+if `yr3'==0 local fileend
+
 
 #delimit ;
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
@@ -260,8 +265,13 @@ if `import'==1 {
 
     gen birth=1
     gen rural=tloc_regis <= 3
+
     keep if ano_nac>=2001&ano_nac<2012
 
+    if `yr3'==1 {
+        local difyr=ano_reg-ano_nac
+        keep if difyr>=0&difyr<=3
+    }
     drop if mun_ocurr==.
     drop if mes_nac==.
 
@@ -287,14 +297,14 @@ if `import'==1 {
     drop length zero munN
 
     egen id=concat(stateid munid)
-    save "$BIR/BirthsMonth", replace
+    save "$BIR/BirthsMonth_`fileend'", replace
 }
 
 ********************************************************************************
 *** (4) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-    use "$BIR/BirthsMonth", clear
+    use "$BIR/BirthsMonth_`fileend'", clear
     drop if Age<15|Age>49
   
     merge 1:1 id year month Age using "$BIR/BirthCovariates"
@@ -344,14 +354,14 @@ if `mergeB'==1 {
     
     
     label data "Birth data and covariates at level of Municipality*Month*Age"
-    save "$BIR/MunicipalBirths.dta", replace
+    save "$BIR/MunicipalBirths_`fileend'.dta", replace
 }
 
 ********************************************************************************
 *** (5) Generate State file
 ********************************************************************************
 if `stateG' {
-    use "$BIR/MunicipalBirths.dta", clear
+    use "$BIR/MunicipalBirths_`fileend'.dta", clear
   
     replace medicalstaff=. if MedMissing==1
     replace planteles=.    if plantelesMissing==1
@@ -418,7 +428,7 @@ if `stateG' {
 
 
     label data "Birth data and covariates at level of State*Month*Age"
-    save "$BIR/StateBirths.dta", replace
+    save "$BIR/StateBirths_`fileend'.dta", replace
 }
 
 ********************************************************************************
