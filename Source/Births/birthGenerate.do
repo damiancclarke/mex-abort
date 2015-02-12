@@ -65,15 +65,14 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  1
+local mergeCV  0
 local import   1
 local mergeB   1
 local stateG   1
 local yr3      0
 
-if `yr3'==1 local fileend window3
+if `yr3'==1 local fileend _window3
 if `yr3'==0 local fileend
-
 
 #delimit ;
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
@@ -301,14 +300,14 @@ if `import'==1 {
     drop length zero munN
 
     egen id=concat(stateid munid)
-    save "$BIR/BirthsMonth_`fileend'", replace
+    save "$BIR/BirthsMonth`fileend'", replace
 }
 
 ********************************************************************************
 *** (4) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-    use "$BIR/BirthsMonth_`fileend'", clear
+    use "$BIR/BirthsMonth`fileend'", clear
     drop if Age<15|Age>49
   
     merge 1:1 id year month Age using "$BIR/BirthCovariates"
@@ -354,14 +353,14 @@ if `mergeB'==1 {
     
     
     label data "Birth data and covariates at level of Municipality*Month*Age"
-    save "$BIR/MunicipalBirths_`fileend'.dta", replace
+    save "$BIR/MunicipalBirths`fileend'.dta", replace
 }
 
 ********************************************************************************
 *** (5) Generate State file
 ********************************************************************************
 if `stateG' {
-    use "$BIR/MunicipalBirths_`fileend'.dta", clear
+    use "$BIR/MunicipalBirths`fileend'.dta", clear
   
     replace medicalstaff=. if MedMissing==1
     replace planteles=.    if plantelesMissing==1
@@ -428,7 +427,7 @@ if `stateG' {
 
 
     label data "Birth data and covariates at level of State*Month*Age"
-    save "$BIR/StateBirths_`fileend'.dta", replace
+    save "$BIR/StateBirths`fileend'.dta", replace
 }
 
 ********************************************************************************
