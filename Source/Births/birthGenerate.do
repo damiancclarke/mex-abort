@@ -65,11 +65,11 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  0
+local mergeCV  1
 local import   1
 local mergeB   1
 local stateG   1
-local yr3      1
+local yr3      0
 
 if `yr3'==1 local fileend window3
 if `yr3'==0 local fileend
@@ -228,6 +228,10 @@ if `mergeCV'==1 {
     replace SP=1 if year>2009&_merge==1
     drop if _merge==2
     drop _merge
+
+    merge m:1 id using "$MET/metropolitan", gen(_metMerge)
+    gen metropolitan=_metMerge==3
+    drop _metMerge
     
     ****        expand so one cell for each age 15-49 (expensive)         ****
     ****     NOTE: there are 4,620 observations for each municipality     ****
@@ -317,10 +321,6 @@ if `mergeB'==1 {
     gen yearmonth     = year+(month-1)/12
     gen Abortion      = stateid=="09"&yearm>=2008
     gen AbortionClose = stateid=="15"&yearm>=2008
-
-    merge m:1 id using "$MET/metropolitan", gen(_metMerge)
-    gen metropolitan=_metMerge==3
-    drop _metMerge
 
     label var Age           "Mother's age at birth"
     label var month         "Month of birth (1-12)"
