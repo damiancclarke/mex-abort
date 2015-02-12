@@ -65,10 +65,10 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  0
-local import   1
+local mergeCV  1
+local import   0
 local mergeB   1
-local stateG   0
+local stateG   1
 
 #delimit ;
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc
@@ -218,11 +218,16 @@ if `mergeCV'==1 {
     drop if _merge==2
     drop _merge
 
+    merge 1:1 id year month using "$COV1/seguroPopularMonth"
+    replace SP=0 if year<2003&_merge==1
+    replace SP=1 if year>2009&_merge==1
+    drop if _merge==2
+    drop _merge
+    
     ****        expand so one cell for each age 15-49 (expensive)         ****
     ****     NOTE: there are 4,620 observations for each municipality     ****
     ****  This is 11 years, by 12 months, by 35 age groups: 11*12*35=4620 ****
     ****  There are 2456 municipalities in Mexico, so total obs=2456*4620 ****
-
     expand 35
     bys id year month: gen Age=_n+14
     save "$BIR/BirthCovariates", replace
@@ -335,7 +340,8 @@ if `mergeB'==1 {
     label var metropolitan  "Indicator for if the municip is metropolitan"
     label var metroPop      "Population of metropolitan area in 2010"
     label var rural         "Proportion of people in birth data from rural"
-
+    label var SP            "Seguro Popular in Municipality"
+    
     
     label data "Birth data and covariates at level of Municipality*Month*Age"
     save "$BIR/MunicipalBirths.dta", replace
@@ -356,7 +362,7 @@ if `stateG' {
 
     #delimit ;
     local col medicalstaff planteles aulas bibliotecas totalinc totalout condom*
-              subsidies unemployment any* adolescentKnows;
+              subsidies unemployment any* adolescentKnows SP;
     #delimit cr
     
     collapse `col' (sum) birth, by(stateid state year month Age) fast
