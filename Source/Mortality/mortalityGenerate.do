@@ -87,13 +87,18 @@ if `import'==1 {
  	keep if materndeath==1 | MMR==1
 	keep if anio_ocur>2001&anio_ocur<=2012
 
-	collapse (sum) MMR materndea edad_ag, by(ent_oc mun_oc mes_oc anio_oc edad)
+  gen murder         = presunto==2
+  gen murderWoman    = presunto==2&sexo==2
+  gen familyViolence = vio_fami==1
+
+  local Dvars MMR materndea edad_ag murder murderWoman familyViolence
+	collapse (sum) `Dvars', by(ent_oc mun_oc mes_oc anio_oc edad)
 
 	rename edad Age
 	rename ent_ocurr StateNum
 	rename mun_ocurr MunNum
 	rename anio_ocur year
-	rename mes_ocurr month
+  rename mes_oc    month
 	rename edad_agru ageGroup
 
 	replace Age=Age-4000
@@ -121,13 +126,16 @@ if `import'==1 {
 ********************************************************************************
 if `mergeB'==1 {
 	use "$MOR/MortalityMonth"
-	drop if year>2010
+	drop if year>2011
 	drop if Age<15|Age>49
 	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
 	drop if _merge==1
   
-	replace MMR=0 if _merge==2
-	replace materndeath=0 if _merge==2
+	replace MMR=0            if _merge==2
+	replace materndeath=0    if _merge==2
+  replace murder=0         if _merge==2
+  replace murderWoman=0    if _merge==2
+  replace familyViolence=0 if _merge==2
 	drop _merge
 	
 	label data "Data on maternal deaths linked with births and population"
@@ -149,7 +157,7 @@ if `stateG' {
 
 	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
 	*/ subsidies unemployment any* adolescentKnows (sum) birth MMR materndeath, /*
-	*/ by(stateid year month Age) fast
+	*/ murder* familyViolence by(stateid year month Age) fast
 
 	gen MedMissing         = medicalstaff ==.
 	gen plantelesMissing   = planteles    ==.
@@ -174,7 +182,7 @@ if `stateG' {
 		local ++i
 	}
 	merge 1:1 stateName Age month year using "$POP/populationStateYearMonth1549.dta"
-	drop if year<2001|year>2010&year!=.
+	drop if year<2001|year>2011&year!=.
 	drop _merge
 	
 	gen yearmonth= year + (month-1)/12
@@ -198,7 +206,12 @@ if `stateG' {
 	label var condomRecent  "% of adults using condoms at recent intercourse"
 	label var anyRecent     "% of adults using any contraceptive at recent intercou"
 	label var yearmonth     "Year and month added together (numerical)"
-
+  label var MMR           "Death within 42 days of child birth"
+  label var materndeath   "Death related to pregnancy (use this one!)"
+  label var murder        "Death is a murder"
+  label var murderWoman   "Death is a murder (woman)"
+  label var familyViolenc "Death is a result of family violence"
+  
 
 	label data "Birth, death data and covariates at level of State*Month*Age"
 	save "$MOR/StateDeaths.dta", replace
