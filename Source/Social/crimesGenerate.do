@@ -37,7 +37,7 @@ local import 1
 if `import'==1 {
     foreach yr in 03 04 05 06 07 08 {
         use "$DAT/20`yr'/pdel20`yr'"
-        merge 1:1 id_ps "$DAT/20`yr'/preg20`yr'"
+        merge m:1 id_ps using "$DAT/20`yr'/preg20`yr'"
 
         keep b_munoc b_entoc b_delito b_mesreg b_anoreg b_entreg b_munreg /*
         */ b_edad b_sexo
@@ -47,20 +47,20 @@ if `import'==1 {
         tempfile c`yr'
         save `c`yr''
     }
-    foreach yr in 09 10 11 {
+    foreach yr in 09 10 11 12 {
         use "$DAT/20`yr'/pdel20`yr'"
-        merge 1:1 id_ps "$DAT/20`yr'/preg20`yr'"
+        merge m:1 id_ps using "$DAT/20`yr'/preg20`yr'"
 
         keep b_munoc b_entoc b_delito b_mesreg b_anoreg b_entreg b_munreg /*
         */ b_edad b_sexo
-        gen intrafamilyViolence = b_delito==181100
-        gen abortionCrime       = b_delito==111300
+        gen intrafamilyViolence = b_delito>=181100&b_delito<=181199
+        gen abortionCrime       = b_delito==111300&b_delito<=111399
 
         tempfile c`yr'
         save `c`yr''
     }
     clear
-    append `c03' `c04' `c05' `c06' `c07' `c08' `c09' `c10' `c11'
+    append using `c03' `c04' `c05' `c06' `c07' `c08' `c09' `c10' `c11' `c12'
     collapse (sum) intraf abortionCrime, by(b_mesreg b_anoreg b_entreg b_munreg)
 
 
