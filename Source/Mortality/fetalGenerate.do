@@ -100,7 +100,7 @@ if `import'==1 {
 ********************************************************************************
 if `mergeB'==1 {
 	use "$MOR/FetalMunicip.dta"
-	drop if year>2010
+	drop if year>2011
 	drop if Age<15|Age>49
 	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
 
