@@ -45,7 +45,7 @@ if `import'==1 {
     */ by(edad_la mun_regis ent_regis mes_sen anio_sen)
 
 
-    rename edad_la    wifeAgeDivorce
+    rename edad_la    Age
     rename edad_el    husbAgeDivorce
     rename mun_regis  MunNum
     rename ent_regis  StateNum

@@ -62,7 +62,7 @@ if `import'==1 {
     collapse edad_el (sum) marriage, by(edad_la mun_regis ent_regis mes_regis anio)
 
 
-    rename edad_la    wifeAge
+    rename edad_la    Age
     rename edad_el    husbAge
     rename mun_regis  MunNum
     rename ent_regis  StateNum
