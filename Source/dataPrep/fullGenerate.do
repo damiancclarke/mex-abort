@@ -75,7 +75,7 @@ if `mAll'== 1 {
     drop if month==.
     drop if munid=="00."
     count if _mergeMort==2
-    *10 (missing municip id)
+    *9 (missing municip id)
     drop if _mergeMort==2
         
     replace MMR            = 0 if _mergeMort==1
@@ -88,18 +88,29 @@ if `mAll'== 1 {
     merge 1:1 id Age year month using "$SOC/DivorceMonth.dta", gen(_mergeDivorce)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
+    drop if month==.|month==99
+    drop if munid=="00."
+    drop if _mergeDivorce==2
+    
     replace divorce = 0 if _mergeDivorce==1
-
+    
 
     merge 1:1 id Age year month using "$SOC/MarriageMonth.dta", gen(_mergeMarriage)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
+    drop if month==.|month==99
+    drop if munid=="00."
+    drop if _mergeMarriage==2
+
     replace marriage = 0 if _mergeMarriage==1
 
 
     merge m:1 id year month using "$SOC/CrimeMonth.dta", gen(_mergeCrime)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
+    drop if munid=="00."
+    drop if _mergeCrime==2
+    
     replace intrafamilyViolence = 0 if _mergeCrime==1&year>2002
     replace intrafamilyViolence = . if year<=2002
     replace abortionCrime       = 0 if _mergeCrime==1&year>2002
