@@ -3,13 +3,13 @@
 
 This file takes microdata on births, fetal deaths, maternal deaths, murders, cr-
 imes, divorces and marriages, along with covariates and makes one large data set
-at the level of the municipality * month * year, and another at the level of the
-state.
+at the level of the state * month * year level.
 
-Individual microdata sets are generated from INEGI source, and generating files
-are located in subfolder called xxxxxGenerate where xxxxx refers to the variable
-of interest (birth, marriage, divorce, ...). The following are the raw datafiles
-used:
+Individual data sets are generated from INEGI microdata, and generating files a-
+re located in subfolder called xxxxGenerate where xxxx refers to the variable of
+interest (birth, marriage, divorce, ...). The following are the raw datafiles u-
+sed:
+
 > Data/Mortality/MortalityMonth.dta
 > Data/Mortality/FetalMunicip.dta
 > Data/Social/CrimeMonth.dta
@@ -59,7 +59,11 @@ if `mAll'== 1 {
     merge 1:1 id Age year month using "$MOR/FetalMunicip.dta", gen(_mergeFD)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
-
+    drop if month==99
+    count if _mergeFD==2
+    *1 case (id=23010)
+    drop if _mergeFD==2 
+    
     replace fetalDeath=0 if _mergeFD==1
     replace earlyTerm =0 if _mergeFD==1
     replace lateTerm  =0 if _mergeFD==1
@@ -68,22 +72,30 @@ if `mAll'== 1 {
     merge 1:1 id Age year month using "$MOR/MortalityMonth.dta", gen(_mergeMort)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
-
+    drop if month==.
+    drop if munid=="00."
+    count if _mergeMort==2
+    *10 (missing municip id)
+    drop if _mergeMort==2
+        
     replace MMR            = 0 if _mergeMort==1
     replace materndeath    = 0 if _mergeMort==1
     replace murder         = 0 if _mergeMort==1
     replace murderWoman    = 0 if _mergeMort==1
     replace familyViolence = 0 if _mergeMort==1
 
+    
     merge 1:1 id Age year month using "$SOC/DivorceMonth.dta", gen(_mergeDivorce)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
     replace divorce = 0 if _mergeDivorce==1
 
+
     merge 1:1 id Age year month using "$SOC/MarriageMonth.dta", gen(_mergeMarriage)
     keep if year>2000&year<2012
     drop if Age<15|Age>49
     replace marriage = 0 if _mergeMarriage==1
+
 
     merge m:1 id year month using "$SOC/CrimeMonth.dta", gen(_mergeCrime)
     keep if year>2000&year<2012
@@ -102,22 +114,22 @@ if `mAll'== 1 {
 if `stateG'==1 {
     use "$BIR/BirthsFullMunicipal.dta", clear
 
-    replace medicalstaff=. if MedMissing==1
-    replace planteles=. if plantelesMissing==1
+    replace medicalstaff=. if MedMissing         ==1
+    replace planteles=.    if plantelesMissing   ==1
     replace laboratorios=. if laboratoriosMissing==1
-    replace aulas=. if aulasMissing==1
-    replace bibliotecas=. if bibliotecasMissing==1
-    replace talleres=. if talleresMissing==1
+    replace aulas=.        if aulasMissing       ==1
+    replace bibliotecas=.  if bibliotecasMissing ==1
+    replace talleres=.     if talleresMissing    ==1
 
     collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
     */ subsidies unemploym any* adolescentKno (sum) birth fetalDeath early late /*
     */ MMR materndeath murder* familyViolence divorce marriage intrafamilyViole /*
     */ abortionCrime, by(stateid year month Age) fast
 
-    gen MedMissing         = medicalstaff ==.
-    gen plantelesMissing   = planteles    ==.
-    gen aulasMissing       = aulas        ==.
-    gen bibliotecasMissing = bibliotecas  ==.
+    gen MedMissing         = medicalstaff     ==.
+    gen plantelesMissing   = planteles        ==.
+    gen aulasMissing       = aulas            ==.
+    gen bibliotecasMissing = bibliotecas      ==.
 
     replace medicalstaff  = 0 if medicalstaff ==.
     replace planteles     = 0 if planteles    ==.
@@ -140,12 +152,12 @@ if `stateG'==1 {
     drop if year<2001|year>2010&year!=.
     drop _merge
 
-    gen yearmonth= year + (month-1)/12
-    gen birthrate  = birth/imputePop
-    gen Fdeathrate = fetalDeath/birth
+    gen yearmonth   = year + (month-1)/12
+    gen birthrate   = birth/imputePop
+    gen Fdeathrate  = fetalDeath/birth
     gen lFdeathrate = earlyTerm/birth
     gen eFdeathrate = lateTerm/birth
-    gen DF=stateNum=="32"
+    gen DF=stateNum =="32"
 
     label var DF            "Indicator for Mexico D.F."
     label var stateName     "State name from population data"
