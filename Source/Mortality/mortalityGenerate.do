@@ -100,6 +100,7 @@ if `import'==1 {
   rename mes_oc    month
 	rename edad_agru ageGroup
 
+  keep if Age>=4001&Age<=4120
 	replace Age=Age-4000
 	
 	tostring StateNum, gen(entN)
