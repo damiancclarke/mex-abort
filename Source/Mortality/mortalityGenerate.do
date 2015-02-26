@@ -46,7 +46,7 @@ global LOG  "~/investigacion/2014/MexAbort/Log"
 log using "$LOG/mortalityGenerate.txt", text replace
 
 local cont medicalstaff MedMissing planteles* aulas* bibliotecas* totalinc /*
-*/ totalout subsidies unemployment condom* any* adolescentKnows 
+*/ totalout subsidies unemployment condom* any* adolescentKnows SP
 local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 */ Zacatecas BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon      /*
 */ Guerrero SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan      /*
@@ -55,21 +55,21 @@ local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco     /*
 local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27 /*
 */ 15 13 22 6 1 17 29 9
 
-local import 0
-local mergeB 1
-local stateG 1
+local import 1
+local mergeB 0
+local stateG 0
 
 ********************************************************************************
 *** (2) Import mortality, rename
 ********************************************************************************
 if `import'==1 {
-	foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
+  foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
 		dis "Appending `yr'"
 		append using "$DAT/DEFUN`yr'.dta"
 		keep ent_regis mun_regis ent_resid mun_resid ent_ocurr mun_ocurr       /*
 		*/ causa_def lista_mex sexo edad dia_ocurr mes_ocurr anio_ocur dia_nac /*
 		*/ mes_nacim anio_nacim ocupacion escolarida edo_civil presunto        /*
-		*/ asist_medi nacionalid embarazo rel_emba edad_agru maternas
+		*/ asist_medi nacionalid embarazo rel_emba edad_agru maternas vio_fami
 	}
 
 	replace edad=.       if edad==4998
@@ -84,7 +84,6 @@ if `import'==1 {
 	
 	gen MMR=maternas!=""
 	gen materndeath=rel_emba==1
- 	keep if materndeath==1 | MMR==1
 	keep if anio_ocur>2001&anio_ocur<=2012
 
   gen murder         = presunto==2
