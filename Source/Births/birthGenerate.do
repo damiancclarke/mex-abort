@@ -33,6 +33,7 @@ ly the following data is required:
 
 
 Past major versions
+   > v1.00: Recreates data so it is now in quinquennial age groups 
    > v0.10: Adds in data for degree of rurality, and for municipal area or not
    > v0.00: Creates four files: municipal, state, and deseasoned or not
 
@@ -48,7 +49,7 @@ set matsize 10000
 *** (1) Globals and locals
 ********************************************************************************
 global DAT  "~/database/MexDemografia/Natalidades"
-global DAT2 "~/investigacion/2014/MexAbort/Data/Population"
+global POP  "~/investigacion/2014/MexAbort/Data/Population/Municip"
 global BIR  "~/investigacion/2014/MexAbort/Data/Births"
 global OUT  "~/investigacion/2014/MexAbort/Results/Births"
 global LOG  "~/investigacion/2014/MexAbort/Log"
@@ -65,10 +66,10 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  0
+local mergeCV  1
 local import   1
 local mergeB   1
-local stateG   1
+local stateG   0
 local yr3      0
 
 if `yr3'==1 local fileend _window3
@@ -236,8 +237,15 @@ if `mergeCV'==1 {
     ****     NOTE: there are 4,620 observations for each municipality     ****
     ****  This is 11 years, by 12 months, by 35 age groups: 11*12*35=4620 ****
     ****  There are 2456 municipalities in Mexico, so total obs=2456*4620 ****
-    expand 35
-    bys id year month: gen Age=_n+14
+    **** expand 35
+    **** bys id year month: gen Age=_n+14
+    **** UPDATE: Now only at the level of the age group (1-7)
+    expand 7
+    bys id year month: gen ageGroup=_n
+
+    merge m:1 ageGro id year using "$POP/populationMunicipalYear1549", gen(_mPop)
+
+    
     save "$BIR/BirthCovariates", replace
 }
 
@@ -309,8 +317,18 @@ if `import'==1 {
 if `mergeB'==1 {
     use "$BIR/BirthsMonth`fileend'", clear
     drop if Age<15|Age>49
-  
-    merge 1:1 id year month Age using "$BIR/BirthCovariates"
+    gen ageGroup = .
+    local a1 = 10
+    foreach num of numlist 1(1)7 {
+        local a1=`a1'+5
+        local a2=`a1'+4
+        dis "Ages: `a1', `a2'"
+        replace ageGroup=`num' if age>=`a1'&age<=`a2'
+    }
+    local cvar ageGroup birthStateNum birthMunNum month year stateid munid id
+    collapse rural (sum) birth, by(`cvar')
+    
+    merge 1:1 id year month ageGroup using "$BIR/BirthCovariates"
     drop if _merge==1
     *31 obs from 23010.
 
@@ -355,6 +373,11 @@ if `mergeB'==1 {
     label data "Birth data and covariates at level of Municipality*Month*Age"
     save "$BIR/MunicipalBirths`fileend'.dta", replace
 }
+exit
+
+**I NEED TO FIX STATE FILE SO THAT NOW IT IS BASED ON AGE GROUPS...
+**THIS REQUIRES UPDATING POPULATION DATA
+
 
 ********************************************************************************
 *** (5) Generate State file
@@ -374,7 +397,7 @@ if `stateG' {
               subsidies unemployment any* adolescentKnows SP;
     #delimit cr
     
-    collapse `col' (sum) birth, by(stateid state year month Age) fast
+    collapse `col' (sum) birth, by(stateid state year month ageGroup) fast
 
     gen MedMissing         = medicalstaff ==.
     gen plantelesMissing   = planteles    ==.
@@ -400,7 +423,7 @@ if `stateG' {
     }
 
     local popfile "populationStateYearMonth1549.dta"
-    merge 1:1 stateName Age month year using "$DAT2/`popfile'"
+    merge 1:1 stateName Age month year using "$POP/`popfile'"
     drop if year<2001|year>2011&year!=.
     drop _merge
 	
