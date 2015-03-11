@@ -311,7 +311,7 @@ lab var ageGroup     "Age group (quinquennial)"
 lab var municipalPop "Population of women of this age group in the municipality"
 lab var year         "Year"
 lab var stateid      "String state identifier 01-32 (two digits)"
-lab var stateid      "String municipal identifier 001-570 (three digits)"
+lab var munid        "String municipal identifier 001-570 (three digits)"
 
 
 lab dat "Mexican population data for women by age group, municipality and year"
