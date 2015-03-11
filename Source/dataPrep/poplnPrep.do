@@ -246,7 +246,7 @@ if `graphs'==1 {
 
 if `munic'==1 {
 *********************************************************************************
-*** (8) Convert municipal data to csv
+*** (8) Convert municipal data to csv, format to just women
 *********************************************************************************
 foreach year of numlist 1990(1)2012 {
     cd $MUN
@@ -279,20 +279,41 @@ foreach year of numlist 1990(1)2012 {
     rename v2 municipName
     rename v3 Total
     keep mun* v9-v15
-    local low=10
-    foreach var of varlist v9-v15 {
-        local low=`low'+5
-        local high=`low'+4
-        dis "`low', `high'"
-        destring `var', replace
-        rename `var' age`low'_`high'
-    }
+
+    reshape long v, i(mun*) j(ageGroup)
+    destring v, replace
+    rename v municipalPopln
+    replace ageGroup=ageGroup-8
     
-    
+    gen year = `year'
+    tempfile m`year'
+    save `m`year''
 }
 
+*********************************************************************************
+*** (9) Append
+*********************************************************************************
+clear
+append using `m2000' `m2001' `m2002' `m2003' `m2004' `m2005' `m2006' `m2007' /*
+*/ `m2008' `m2009' `m2010' `m2011'
+
+lab def AG 1 "15-19" 2 "20-24" 3 "25-29" 4 "30-34" 5 "35-39" 6 "40-44" 7 "45-49"
+lab val ageGroup AG
+
+rename munid id
+gen stateid = substr(id, 1, 2)
+gen munid   = substr(id, 3, 5)
+
+lab var municipCode  "Numerical municipal + state code"
+lab var municipName  "Name of municipality (accents are weird)"
+lab var id           "String concatenation of state and municipal id"
+lab var ageGroup     "Age group (quinquennial)"
+lab var municipalPop "Population of women of this age group in the municipality"
+lab var year         "Year"
+lab var stateid      "String state identifier 01-32 (two digits)"
+lab var stateid      "String municipal identifier 001-570 (three digits)"
 
 
-
-
+lab dat "Mexican population data for women by age group, municipality and year"
+save "$MUN/populationMunicipalYear1549", replace
 }
