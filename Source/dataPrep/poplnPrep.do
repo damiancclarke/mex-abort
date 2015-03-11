@@ -1,4 +1,4 @@
-* poplnPrep.do v 0.10               DCC/HM                 yyyy-mm-dd:2014-06-29
+* poplnPrep.do v 1.00               DCC/HM                 yyyy-mm-dd:2014-06-29
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -27,7 +27,7 @@ nged to reflect directory structure on the local machine.
 For optimal viewing of this file, set tab width to 2.
 
 Modifications -- DCC 2014-07-15 (v 0.10): Updating for month*year
-              -- 
+              -- DCC 2015-03-10 (v 1.00): Updating for municipal population
 */
 
 vers 11
@@ -39,6 +39,7 @@ cap log close
 *** (1) Globals and locals
 *********************************************************************************
 global DAT "~/investigacion/2014/MexAbort/Data/Population"
+global MUN "~/investigacion/2014/MexAbort/Data/Population/Municip"
 global OUT "~/investigacion/2014/MexAbort/Results/Descriptives/Popln"
 
 #delimit ;
@@ -54,6 +55,10 @@ local Numbers 29 12 09 17 10 01 03 28 32 04 22 14 26 07 25 16 30 23 13 05 21 27
 cd "$DAT"
 
 local graphs 0
+local state  0
+local munic  1
+
+if `state'==1{
 *********************************************************************************
 *** (2) Convert xlsx from zip file to csv data using Python + system call
 *********************************************************************************
@@ -236,4 +241,58 @@ if `graphs'==1 {
 	  ytitle("Population in Millions") subtitle("Women Aged 15-49") ///
 	  legend(label(1 "D.F.") label(2 "Rest of Mexico"))
 	graph export "$OUT/populationTrendTreatControl.eps", as(eps) replace
+}
+}
+
+if `munic'==1 {
+*********************************************************************************
+*** (8) Convert municipal data to csv
+*********************************************************************************
+foreach year of numlist 1990(1)2012 {
+    cd $MUN
+    *!py_xls2csv `year'total.xls > `year'total.csv
+
+    insheet using "`year'total.csv", comma clear
+		gen startwomen=1 if v1=="Mujeres"
+		gen n=_n
+		sum n if startwomen==1
+		local begin=`r(mean)'+8
+		count
+		local end=`r(N)'-1
+		keep in `begin'/`end'
+
+
+    gen municip = regexm(v1,"^[0-9]")
+    drop if municip!=1
+
+
+    drop startwomen n municip v4
+    gen l=length(v1)
+    gen z="0"
+    destring v1, replace
+    rename v1 municipCode
+    tostring municipCode, gen(mid)
+    
+    egen munid = concat(z mid) if l==6
+    replace munid = mid if l==7
+
+    rename v2 municipName
+    rename v3 Total
+    keep mun* v9-v15
+    local low=10
+    foreach var of varlist v9-v15 {
+        local low=`low'+5
+        local high=`low'+4
+        dis "`low', `high'"
+        destring `var', replace
+        rename `var' age`low'_`high'
+    }
+    
+    
+}
+
+
+
+
+
 }
