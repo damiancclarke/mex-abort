@@ -244,7 +244,9 @@ if `mergeCV'==1 {
     bys id year month: gen ageGroup=_n
 
     merge m:1 ageGro id year using "$POP/populationMunicipalYear1549", gen(_mPop)
-
+    *losing year 2000 and id==14125, 23009.  This is fine.
+    keep if _mPop==3
+    
     
     save "$BIR/BirthCovariates", replace
 }
