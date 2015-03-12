@@ -66,7 +66,7 @@ foreach uswado in mergemany {
 }
 
 local covPrep  0
-local mergeCV  1
+local mergeCV  0
 local import   1
 local mergeB   1
 local stateG   0
@@ -264,7 +264,7 @@ if `import'==1 {
         local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac 
         mes_nac ia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo  
         hijos_sobr sexo tipo_nac lugar_part q_atendio edociv_mad act_pad
-        escol_pad escol_mad fue_prese act_mad
+        escol_pad escol_mad fue_prese act_mad;
         #delimit cr
     
         foreach v of local v999 {
