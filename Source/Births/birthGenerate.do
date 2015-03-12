@@ -1,4 +1,4 @@
-/* birthGenerate v1.00              DCC/HM                 yyyy-mm-dd:2014-10-17
+/* birthGenerate v1.01              DCC/HM                 yyyy-mm-dd:2014-10-17
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -256,63 +256,71 @@ if `mergeCV'==1 {
 ********************************************************************************
 if `import'==1 {
     foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
-        dis "Appending `yr'"
-        append using "$DAT/NACIM`yr'.dta"
-    }
+        dis "Working with `yr'"
+        use "$DAT/NACIM`yr'.dta"
 
-    #delimit ;
-    local v999 mun_resid mun_ocurr;
-    local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac mes_nac
-               dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo act_mad 
-               hijos_sobr sexo tipo_nac lugar_part q_atendio edociv_mad  act_pad
-	             escol_pad escol_mad fue_prese;
-    #delimit cr
+       #delimit ;
+        local v999 mun_resid mun_ocurr;
+        local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac 
+        mes_nac ia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo  
+        hijos_sobr sexo tipo_nac lugar_part q_atendio edociv_mad act_pad
+        escol_pad escol_mad fue_prese act_mad
+        #delimit cr
     
-    foreach v of local v999 {
-        replace `v'=. if `v'==999
+        foreach v of local v999 {
+            replace `v'=. if `v'==999
+        }
+        foreach v of local v99  {
+            replace `v'=. if `v'==99
+        }
+        replace ano_nac=. if ano_nac==9999
+        
+        gen birth=1
+        gen rural=tloc_regis <= 3
+
+        keep if ano_nac>=2001&ano_nac<2012
+        
+        if `yr3'==1 {
+            gen difyr=ano_reg-ano_nac
+            keep if difyr>=0&difyr<=3
+        }
+        drop if mun_ocurr==.
+        drop if mes_nac==.
+
+        collapse rural (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
+
+        rename edad_madn Age
+        rename ent_ocurr birthStateNum
+        rename mun_ocurr birthMunNum
+        rename ano_nac year
+        rename mes_nac month
+
+        tostring birthStateNum, gen(entN)
+        gen length=length(entN)
+        gen zero="0" if length==1
+        egen stateid=concat(zero entN)
+        drop length zero entN
+        
+        tostring birthMunNum, gen(munN)
+        gen length=length(munN)
+        gen zero="0" if length==2
+        replace zero="00" if length==1
+        egen munid=concat(zero munN)
+        drop length zero munN
+
+        egen id=concat(stateid munid)
+        tempfile f`yr'
+        save `f`yr''
     }
-    foreach v of local v99  {
-        replace `v'=. if `v'==99
-    }
-    replace ano_nac=. if ano_nac==9999
 
-    gen birth=1
-    gen rural=tloc_regis <= 3
-
-    keep if ano_nac>=2001&ano_nac<2012
-
-    if `yr3'==1 {
-        gen difyr=ano_reg-ano_nac
-        keep if difyr>=0&difyr<=3
-    }
-    drop if mun_ocurr==.
-    drop if mes_nac==.
-
-    collapse rural (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
-
-    rename edad_madn Age
-    rename ent_ocurr birthStateNum
-    rename mun_ocurr birthMunNum
-    rename ano_nac year
-    rename mes_nac month
-
-    tostring birthStateNum, gen(entN)
-    gen length=length(entN)
-    gen zero="0" if length==1
-    egen stateid=concat(zero entN)
-    drop length zero entN
-
-    tostring birthMunNum, gen(munN)
-    gen length=length(munN)
-    gen zero="0" if length==2
-    replace zero="00" if length==1
-    egen munid=concat(zero munN)
-    drop length zero munN
-
-    egen id=concat(stateid munid)
+    clear
+    append using `f01' `f02' `f03' `f04' `f05' `f06' `f07' `f08' `f09' `f10' /*
+    */ `f11' `f12' `f13' 
     save "$BIR/BirthsMonth`fileend'", replace
 }
 
+
+    
 ********************************************************************************
 *** (4) Merge with covariates, generate treatments
 ********************************************************************************
