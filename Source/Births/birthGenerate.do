@@ -67,7 +67,7 @@ foreach uswado in mergemany {
 
 local covPrep  0
 local mergeCV  0
-local import   1
+local import   0
 local mergeB   1
 local stateG   0
 local yr3      0
@@ -262,7 +262,7 @@ if `import'==1 {
        #delimit ;
         local v999 mun_resid mun_ocurr;
         local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac 
-        mes_nac ia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo  
+        mes_nac dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo  
         hijos_sobr sexo tipo_nac lugar_part q_atendio edociv_mad act_pad
         escol_pad escol_mad fue_prese act_mad;
         #delimit cr
@@ -276,7 +276,6 @@ if `import'==1 {
         replace ano_nac=. if ano_nac==9999
         
         gen birth=1
-        gen rural=tloc_regis <= 3
 
         keep if ano_nac>=2001&ano_nac<2012
         
@@ -287,7 +286,7 @@ if `import'==1 {
         drop if mun_ocurr==.
         drop if mes_nac==.
 
-        collapse rural (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
+        collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
 
         rename edad_madn Age
         rename ent_ocurr birthStateNum
@@ -333,10 +332,10 @@ if `mergeB'==1 {
         local a1=`a1'+5
         local a2=`a1'+4
         dis "Ages: `a1', `a2'"
-        replace ageGroup=`num' if age>=`a1'&age<=`a2'
+        replace ageGroup=`num' if Age>=`a1'&Age<=`a2'
     }
     local cvar ageGroup birthStateNum birthMunNum month year stateid munid id
-    collapse rural (sum) birth, by(`cvar')
+    collapse (sum) birth, by(`cvar')
     
     merge 1:1 id year month ageGroup using "$BIR/BirthCovariates"
     drop if _merge==1
@@ -349,7 +348,7 @@ if `mergeB'==1 {
     gen Abortion      = stateid=="09"&yearm>=2008
     gen AbortionClose = stateid=="15"&yearm>=2008
 
-    label var Age           "Mother's age at birth"
+    label var ageGroup      "Mother's age group at birth"
     label var month         "Month of birth (1-12)"
     label var year          "Year of birth (2001-2011)"
     label var stateid       "State identifier (string)"
@@ -376,7 +375,7 @@ if `mergeB'==1 {
     label var yearmonth     "Year and month added together (numerical)"
     label var metropolitan  "Indicator for if the municip is metropolitan"
     label var metroPop      "Population of metropolitan area in 2010"
-    label var rural         "Proportion of people in birth data from rural"
+    *label var rural         "Proportion of people in birth data from rural"
     label var SP            "Seguro Popular in Municipality"
     
     
