@@ -1,4 +1,4 @@
-/* birthGenerate v1.01              DCC/HM                 yyyy-mm-dd:2014-10-17
+/* birthGenerate v1.10              DCC/HM                 yyyy-mm-dd:2014-10-17
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
@@ -11,10 +11,10 @@ owing two files:
 	> StateBirths.dta
 
 where the difference between each file is the level of aggregation (State is hi-
-gher than Municipal). Each file contains one line per month*year*age (15-49), w-
+gher than Municipal). Each file contains one line per year*age (15-49), w-
 ith the number of births that women of the age group had in that time period and
 area (either municipality or State).  This includes cases where zero births occ-
-urred in the month in the particular area.
+urred in the in the particular area.
 
 The file can be controlled in section 1 which requires a group of globals and l-
 ocals defining locations of key data sets and specification decisions.  Current-
@@ -33,6 +33,7 @@ ly the following data is required:
 
 
 Past major versions
+   > v1.10: Makes file at a year level rather than month
    > v1.00: Recreates data so it is now in quinquennial age groups 
    > v0.10: Adds in data for degree of rurality, and for municipal area or not
    > v0.00: Creates four files: municipal, state, and deseasoned or not
@@ -68,8 +69,8 @@ foreach uswado in mergemany {
 local covPrep  0
 local mergeCV  0
 local import   0
-local mergeB   1
-local stateG   0
+local mergeB   0
+local stateG   1
 local yr3      0
 
 if `yr3'==1 local fileend _window3
@@ -232,16 +233,13 @@ if `mergeCV'==1 {
     merge m:1 id using "$MET/metropolitan", gen(_metMerge)
     gen metropolitan=_metMerge==3
     drop _metMerge
+
+    ds id year stateid MunName month metropolitanName state municip anexos /*
+    */ trimester, not
+    collapse `r(varlist)', by(id year stateid MunName state municip)
     
-    ****        expand so one cell for each age 15-49 (expensive)         ****
-    ****     NOTE: there are 4,620 observations for each municipality     ****
-    ****  This is 11 years, by 12 months, by 35 age groups: 11*12*35=4620 ****
-    ****  There are 2456 municipalities in Mexico, so total obs=2456*4620 ****
-    **** expand 35
-    **** bys id year month: gen Age=_n+14
-    **** UPDATE: Now only at the level of the age group (1-7)
     expand 7
-    bys id year month: gen ageGroup=_n
+    bys id year: gen ageGroup=_n
 
     merge m:1 ageGro id year using "$POP/populationMunicipalYear1549", gen(_mPop)
     *losing year 2000 and id==14125, 23009.  This is fine.
@@ -286,13 +284,12 @@ if `import'==1 {
         drop if mun_ocurr==.
         drop if mes_nac==.
 
-        collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac mes_nac edad_madn)
+        collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
 
         rename edad_madn Age
         rename ent_ocurr birthStateNum
         rename mun_ocurr birthMunNum
         rename ano_nac year
-        rename mes_nac month
 
         tostring birthStateNum, gen(entN)
         gen length=length(entN)
@@ -315,7 +312,7 @@ if `import'==1 {
     clear
     append using `f01' `f02' `f03' `f04' `f05' `f06' `f07' `f08' `f09' `f10' /*
     */ `f11' `f12' `f13' 
-    save "$BIR/BirthsMonth`fileend'", replace
+    save "$BIR/BirthsYear`fileend'", replace
 }
 
 
@@ -324,7 +321,7 @@ if `import'==1 {
 *** (4) Merge with covariates, generate treatments
 ********************************************************************************
 if `mergeB'==1 {
-    use "$BIR/BirthsMonth`fileend'", clear
+    use "$BIR/BirthsYear`fileend'", clear
     drop if Age<15|Age>49
     gen ageGroup = .
     local a1 = 10
@@ -334,22 +331,25 @@ if `mergeB'==1 {
         dis "Ages: `a1', `a2'"
         replace ageGroup=`num' if Age>=`a1'&Age<=`a2'
     }
-    local cvar ageGroup birthStateNum birthMunNum month year stateid munid id
+    local cvar ageGroup birthStateNum birthMunNum year stateid munid id
     collapse (sum) birth, by(`cvar')
     
-    merge 1:1 id year month ageGroup using "$BIR/BirthCovariates"
+    merge 1:1 id year ageGroup using "$BIR/BirthCovariates"
     drop if _merge==1
-    *31 obs from 23010.
+    *578 obs from 14125, 20009, 23010.
 
+    tab ageGroup if _merge==2
+    sum birth
     replace birth=0 if _merge==2
-    drop _merge birthStateNum birthMunNum
+    sum birth
+    drop _merge birthStateNum birthMunNum _mPop
 
-    gen yearmonth     = year+(month-1)/12
-    gen Abortion      = stateid=="09"&yearm>=2008
-    gen AbortionClose = stateid=="15"&yearm>=2008
+    gen Abortion      = stateid=="09"&year>=2008
+    gen AbortionClose = stateid=="15"&year>=2008
 
+    gen birthRate     = birth/municipalPopln
+    
     label var ageGroup      "Mother's age group at birth"
-    label var month         "Month of birth (1-12)"
     label var year          "Year of birth (2001-2011)"
     label var stateid       "State identifier (string)"
     label var munid         "Municipal identifier (string)"
@@ -363,7 +363,6 @@ if `mergeB'==1 {
     label var bibliotecas   "Number of libraries in municipality"
     label var laboratorios  "Number of laboratories (study) in the municip"
     label var talleres      "Number of workshops in the municipality"
-    label var trimester     "Trimester of the year (I-IV)"
     label var unemployment  "Unemployment rate in the State"
     label var condomFirstTe "% teens reporting using condoms at first sex"
     label var condomRecentT "% teens reporting using condoms in recent sex"
@@ -372,26 +371,37 @@ if `mergeB'==1 {
     label var condomRecent  "% of adults using condoms at recent sex"
     label var anyRecent     "% of adults using any contraceptive at recent sex"
     label var Abortion      "Availability of abortion (1 in DF post reform)"
-    label var yearmonth     "Year and month added together (numerical)"
     label var metropolitan  "Indicator for if the municip is metropolitan"
     label var metroPop      "Population of metropolitan area in 2010"
-    *label var rural         "Proportion of people in birth data from rural"
     label var SP            "Seguro Popular in Municipality"
+    label var birth         "Count of the number of births"
+    label var birthRate     "Number of births per women of this age group"
     
     
-    label data "Birth data and covariates at level of Municipality*Month*Age"
+    label data "Birth data and covariates at level of Municipality*Year*Age"
     save "$BIR/MunicipalBirths`fileend'.dta", replace
 }
-exit
-
-**I NEED TO FIX STATE FILE SO THAT NOW IT IS BASED ON AGE GROUPS...
-**THIS REQUIRES UPDATING POPULATION DATA
 
 
 ********************************************************************************
 *** (5) Generate State file
 ********************************************************************************
 if `stateG' {
+    use "$POP/../popStateYr1549LONG.dta"
+    keep if year>=2001&year<=2011
+
+    gen ageGroup = .
+    local a1 = 10
+    foreach num of numlist 1(1)7 {
+        local a1=`a1'+5
+        local a2=`a1'+4
+        dis "Ages: `a1', `a2'"
+        replace ageGroup=`num' if Age>=`a1'&Age<=`a2'
+    }
+    collapse (sum) population, by(ageGroup year stateNum stateName)
+    tempfile statepop
+    save `statepop'
+    
     use "$BIR/MunicipalBirths`fileend'.dta", clear
   
     replace medicalstaff=. if MedMissing==1
@@ -406,8 +416,8 @@ if `stateG' {
               subsidies unemployment any* adolescentKnows SP;
     #delimit cr
     
-    collapse `col' (sum) birth, by(stateid state year month ageGroup) fast
-
+    collapse `col' (sum) birth, by(stateid state year ageGroup)
+    
     gen MedMissing         = medicalstaff ==.
     gen plantelesMissing   = planteles    ==.
     gen aulasMissing       = aulas        ==.
@@ -432,12 +442,11 @@ if `stateG' {
     }
 
     local popfile "populationStateYearMonth1549.dta"
-    merge 1:1 stateName Age month year using "$POP/`popfile'"
+    merge 1:1 stateName ageGroup year using `statepop'
     drop if year<2001|year>2011&year!=.
     drop _merge
 	
-    gen yearmonth= year + (month-1)/12
-    gen birthrate  = birth/imputePop
+    gen birthrate  = birth/population
     gen DF=stateNum=="32"
 
     label var DF            "Indicator for Mexico D.F."
@@ -455,7 +464,6 @@ if `stateG' {
     label var adolescentKno "Percent of teens knowing any contraceptives"
     label var condomRecent  "% of adults using condoms at recent sex"
     label var anyRecent     "% of adults using any contraceptive at recent sex"
-    label var yearmonth     "Year and month added together (numerical)"
 
 
     label data "Birth data and covariates at level of State*Month*Age"
