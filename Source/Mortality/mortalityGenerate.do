@@ -2,8 +2,8 @@
 *---|----1----|----2----|----3----|----4----|----5----|----6----|----7----|----8
 *
 
-This script genrates a number of output files based on mortality data, and cova-
-riates included in birth data.  These covariates include time-varying municipal
+This script generates a number of output files based on mortality data, and cov-
+ariates included in birth data.  These covariates include time-varying municipal
 and regional controls, along with total population and total births at the same
 level. It produces the following files:
 
@@ -64,61 +64,65 @@ local stateG 0
 ********************************************************************************
 if `import'==1 {
   foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
-		dis "Appending `yr'"
-		append using "$DAT/DEFUN`yr'.dta"
-		keep ent_regis mun_regis ent_resid mun_resid ent_ocurr mun_ocurr       /*
-		*/ causa_def lista_mex sexo edad dia_ocurr mes_ocurr anio_ocur dia_nac /*
-		*/ mes_nacim anio_nacim ocupacion escolarida edo_civil presunto        /*
-		*/ asist_medi nacionalid embarazo rel_emba edad_agru maternas vio_fami
-	}
+      dis "Working with `yr'"
+      use "$DAT/DEFUN`yr'.dta"
+      keep ent_regis mun_regis ent_resid mun_resid ent_ocurr mun_ocurr       /*
+		  */ causa_def lista_mex sexo edad dia_ocurr mes_ocurr anio_ocur dia_nac /*
+		  */ mes_nacim anio_nacim ocupacion escolarida edo_civil presunto        /*
+		  */ asist_medi nacionalid embarazo rel_emba edad_agru maternas vio_fami
 
-	replace edad=.       if edad==4998
-	replace mun_resid=.  if mun_resid==999
-	replace mun_ocurr=.  if mun_ocurr==999
-	replace ent_resid=.  if ent_resid==99
-	replace dia_ocurr=.  if dia_ocurr==99
-	replace mes_ocurr=.  if mes_ocurr==99
-	replace anio_ocur=.  if anio_ocur==9999
-	replace anio_nacim=. if anio_nacim==9999
+      replace edad=.       if edad==4998
+      replace mun_resid=.  if mun_resid==999
+      replace mun_ocurr=.  if mun_ocurr==999
+      replace ent_resid=.  if ent_resid==99
+      replace dia_ocurr=.  if dia_ocurr==99
+      replace mes_ocurr=.  if mes_ocurr==99
+      replace anio_ocur=.  if anio_ocur==9999
+      replace anio_nacim=. if anio_nacim==9999
 	
 	
-	gen MMR=maternas!=""
-	gen materndeath=rel_emba==1
-	keep if anio_ocur>2001&anio_ocur<=2012
+      gen MMR=maternas!=""
+      gen materndeath=rel_emba==1
+      keep if anio_ocur>2001&anio_ocur<=2012
 
-  gen murder         = presunto==2
-  gen murderWoman    = presunto==2&sexo==2
-  gen familyViolence = vio_fami==1
+      gen murder         = presunto==2
+      gen murderWoman    = presunto==2&sexo==2
+      gen familyViolence = vio_fami==1
 
-  local Dvars MMR materndea edad_ag murder murderWoman familyViolence
-	collapse (sum) `Dvars', by(ent_oc mun_oc mes_oc anio_oc edad)
+      local Dvars MMR materndea edad_ag murder murderWoman familyViolence
+      collapse (sum) `Dvars', by(ent_oc mun_oc mes_oc anio_oc edad)
 
-	rename edad Age
-	rename ent_ocurr StateNum
-	rename mun_ocurr MunNum
-	rename anio_ocur year
-  rename mes_oc    month
-	rename edad_agru ageGroup
+      rename edad Age
+      rename ent_ocurr StateNum
+      rename mun_ocurr MunNum
+      rename anio_ocur year
+      rename mes_oc    month
+      rename edad_agru ageGroup
 
-  keep if Age>=4001&Age<=4120
-	replace Age=Age-4000
+      keep if Age>=4001&Age<=4120
+      replace Age=Age-4000
 	
-	tostring StateNum, gen(entN)
-	gen length=length(entN)
-	gen zero="0" if length==1
-	egen stateid=concat(zero entN)
-	drop length zero entN
+      tostring StateNum, gen(entN)
+      gen length=length(entN)
+      gen zero="0" if length==1
+      egen stateid=concat(zero entN)
+      drop length zero entN
 
-	tostring MunNum, gen(munN)
-	gen length=length(munN)
-	gen zero="0" if length==2
-	replace zero="00" if length==1
-	egen munid=concat(zero munN)
-	drop length zero munN
+      tostring MunNum, gen(munN)
+      gen length=length(munN)
+      gen zero="0" if length==2
+      replace zero="00" if length==1
+      egen munid=concat(zero munN)
+      drop length zero munN
 
-	egen id=concat(stateid munid)
-	label data "Count of Maternal Deaths by age, municipality and month"
-	save "$MOR/MortalityMonth", replace
+      egen id=concat(stateid munid)
+      label data "Count of Maternal Deaths by age, municipality and month"
+      tempfile M`yr'
+  }
+  clear
+  append using `M01' `M02' `M03' `M04' `M05' `M06' `M07' `M08' `M09' `M10' /*
+  */ `M11' `M12'
+  save "$MOR/MortalityMonth", replace
 }
 
 ********************************************************************************
