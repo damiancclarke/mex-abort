@@ -65,7 +65,7 @@ local stateG 0
 if `import'==1 {
   foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 {
       dis "Working with `yr'"
-      use "$DAT/DEFUN`yr'.dta"
+      use "$DAT/DEFUN`yr'.dta", clear
       keep ent_regis mun_regis ent_resid mun_resid ent_ocurr mun_ocurr       /*
 		  */ causa_def lista_mex sexo edad dia_ocurr mes_ocurr anio_ocur dia_nac /*
 		  */ mes_nacim anio_nacim ocupacion escolarida edo_civil presunto        /*
@@ -83,20 +83,19 @@ if `import'==1 {
 	
       gen MMR=maternas!=""
       gen materndeath=rel_emba==1
-      keep if anio_ocur>2001&anio_ocur<=2012
+      keep if anio_ocur>=2001&anio_ocur<=2012
 
       gen murder         = presunto==2
       gen murderWoman    = presunto==2&sexo==2
       gen familyViolence = vio_fami==1
 
       local Dvars MMR materndea edad_ag murder murderWoman familyViolence
-      collapse (sum) `Dvars', by(ent_oc mun_oc mes_oc anio_oc edad)
+      collapse (sum) `Dvars', by(ent_oc mun_oc anio_oc edad)
 
       rename edad Age
       rename ent_ocurr StateNum
       rename mun_ocurr MunNum
       rename anio_ocur year
-      rename mes_oc    month
       rename edad_agru ageGroup
 
       keep if Age>=4001&Age<=4120
@@ -116,111 +115,15 @@ if `import'==1 {
       drop length zero munN
 
       egen id=concat(stateid munid)
-      label data "Count of Maternal Deaths by age, municipality and month"
+      label data "Count of Maternal Deaths by age, municipality and year"
       tempfile M`yr'
+      save `M`yr''
   }
   clear
   append using `M01' `M02' `M03' `M04' `M05' `M06' `M07' `M08' `M09' `M10' /*
   */ `M11' `M12'
-  save "$MOR/MortalityMonth", replace
+  save "$MOR/MortalityYear", replace
 }
-
-********************************************************************************
-*** (3) Merge with birth data
-********************************************************************************
-if `mergeB'==1 {
-	use "$MOR/MortalityMonth"
-	drop if year>2011
-	drop if Age<15|Age>49
-	merge 1:1 id Age year month using "$BIR/MunicipalBirths"
-	drop if _merge==1
-  
-	replace MMR=0            if _merge==2
-	replace materndeath=0    if _merge==2
-  replace murder=0         if _merge==2
-  replace murderWoman=0    if _merge==2
-  replace familyViolence=0 if _merge==2
-	drop _merge
-	
-	label data "Data on maternal deaths linked with births and population"
-	save "$MOR/MunicipalDeaths.dta", replace
-}
-
-********************************************************************************
-*** (4) Generate State file
-********************************************************************************
-if `stateG' {
-	use "$MOR/MunicipalDeaths.dta", clear
-
-	replace medicalstaff=. if MedMissing==1
-	replace planteles=. if plantelesMissing==1
-	replace laboratorios=. if laboratoriosMissing==1
-	replace aulas=. if aulasMissing==1
-	replace bibliotecas=. if bibliotecasMissing==1
-	replace talleres=. if talleresMissing==1
-
-	collapse medicalstaff planteles aulas bibliotecas totalinc totalout condom* /*
-	*/ subsidies unemployment any* adolescentKnows (sum) birth MMR materndeath, /*
-	*/ murder* familyViolence by(stateid year month Age) fast
-
-	gen MedMissing         = medicalstaff ==.
-	gen plantelesMissing   = planteles    ==.
-	gen aulasMissing       = aulas        ==.
-	gen bibliotecasMissing = bibliotecas  ==.
-	
-	replace medicalstaff  = 0 if medicalstaff ==.
-	replace planteles     = 0 if planteles    ==.
-	replace aulas         = 0 if planteles    ==.
-	replace bibliotecas   = 0 if bibliotecas  ==.	
-	
-	gen stateName=""
-	tokenize `popName'
-	local i=1
-	foreach num of numlist `popNum' {
-		if `num'<10 {
-			replace stateName="``i''" if stateid=="0`num'"
-		}
-		if `num' >=10 {
-			replace stateName="``i''" if stateid=="`num'"
-		}
-		local ++i
-	}
-	merge 1:1 stateName Age month year using "$POP/populationStateYearMonth1549.dta"
-	drop if year<2001|year>2011&year!=.
-	drop _merge
-	
-	gen yearmonth= year + (month-1)/12
-	gen birthrate  = birth/imputePop
-	gen Mdeathrate = materndeath/birth
-	gen DF=stateNum=="32"
-
-	label var DF            "Indicator for Mexico D.F."
-	label var stateName     "State name from population data"
-	label var stateid       "State number (string) from population data"	
-	label var medicalstaff  "Number of medical staff in the state (average)"
-	label var MedMissing    "Indicator for missing obs on medical staff"
-	label var planteles     "Number of educational establishments in municipality"
-	label var aulas         "Number of classrooms in municipality"
-	label var bibliotecas   "Number of libraries in municipality"
-	label var unemployment  "Unemployment rate in the State"
-	label var condomFirstTe "% teens reporting using condoms at first intercourse"
-	label var condomRecentT "% teens reporting using condoms at recent intercourse"
-	label var anyFirstTeen  "% of teens using any contraceptive method"
-	label var adolescentKno "Percent of teens reporting knowing any contraceptives"
-	label var condomRecent  "% of adults using condoms at recent intercourse"
-	label var anyRecent     "% of adults using any contraceptive at recent intercou"
-	label var yearmonth     "Year and month added together (numerical)"
-  label var MMR           "Death within 42 days of child birth"
-  label var materndeath   "Death related to pregnancy (use this one!)"
-  label var murder        "Death is a murder"
-  label var murderWoman   "Death is a murder (woman)"
-  label var familyViolenc "Death is a result of family violence"
-  
-
-	label data "Birth, death data and covariates at level of State*Month*Age"
-	save "$MOR/StateDeaths.dta", replace
-}
-
 
 ********************************************************************************
 *** (X) Close
