@@ -68,8 +68,8 @@ foreach uswado in mergemany {
 
 local covPrep  0
 local mergeCV  0
-local import   0
-local mergeB   0
+local import   1
+local mergeB   1
 local stateG   1
 local yr3      0
 
@@ -253,11 +253,13 @@ if `mergeCV'==1 {
 *** (3) Import births, rename
 ********************************************************************************
 if `import'==1 {
+    local kept
+    local totl
     foreach yr in 01 02 03 04 05 06 07 08 09 10 11 12 13 {
         dis "Working with `yr'"
         use "$DAT/NACIM`yr'.dta"
 
-       #delimit ;
+        #delimit ;
         local v999 mun_resid mun_ocurr;
         local v99  tloc_resid ent_ocurr edad_reg edad_madn edad_padn dia_nac 
         mes_nac dia_reg mes_reg edad_madr edad_padr orden_part hijos_vivo  
@@ -283,6 +285,14 @@ if `import'==1 {
         }
         drop if mun_ocurr==.
         drop if mes_nac==.
+
+        count if ent_ocurr==ent_resid
+        local Nsame = `=`r(N)''
+        local kept `kept' `Nsame'
+        count
+        local Ntot  = `=`r(N)''
+        local totl `totl' `Ntot'
+        keep if ent_ocurr==ent_resid
 
         collapse (sum) birth, by(ent_ocurr mun_ocurr ano_nac edad_madn)
 
@@ -315,8 +325,6 @@ if `import'==1 {
     save "$BIR/BirthsYear`fileend'", replace
 }
 
-
-    
 ********************************************************************************
 *** (4) Merge with covariates, generate treatments
 ********************************************************************************
@@ -474,3 +482,8 @@ if `stateG' {
 *** (X) Close
 ********************************************************************************
 log close
+
+if `import'==1 {
+    dis "The number of births in each year are: `totl'"
+    dis "The number occuring in the state of residence are are: `kept'"
+}
