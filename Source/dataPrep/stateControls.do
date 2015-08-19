@@ -15,6 +15,7 @@ Fórmula para calcular el índice general. INCBG = (número de veces en los que 
 dio mordida en los 35 servicios / número total de veces que se utilizaron los 35 s
 ervicios) X 100. El resultado de esta fórmula es el que se muestra en la tabla.
 
+Contraceptive variables are generated in contracepPrep.do
 */
 
 vers 11
@@ -26,11 +27,30 @@ cap log close
 *--- (1) globals
 *-------------------------------------------------------------------------------
 global DAT "~/investigacion/2014/MexAbort/Data/State"
+global POP "~/investigacion/2014/MexAbort/Data/Population"
+global MUN "~/investigacion/2014/MexAbort/Data/Municip"
+global LAB "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
 global LOG "~/investigacion/2014/MexAbort/Log"
 global SOR "~/investigacion/2014/MexAbort/Source/dataPrep"
 
+
 log using "$LOG/stateControls.txt", text replace
 
+#delimit ;
+local lName aguascalientes   baja_california   baja_california_sur   campeche
+   coahuila_de_zaragoza  colima  chiapas  chihuahua  distrito_federal durango
+   guanajuato guerrero  hidalgo  jalisco  mexico  michoacan_de_ocampo morelos
+   nayarit  nuevo_leon  oaxaca  puebla queretaro quintana_roo san_luis_potosi
+   sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave
+   yucatan zacatecas;
+local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco
+   Zacatecas  BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon
+   Guerrero  SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan
+   Puebla  Guanajuato  Nayarit  Tabasco  Mexico  Hidalgo Queretaro Colima
+   Aguascalientes Morelos Tlaxcala DistritoFederal;
+local popNum 8 26 5 10 20 28 14 32 3 7 30 2 19 12 24 16 4 25 23 31 21 11 18 27
+   15 13 22 6 1 17 29 9;
+#delimit cr
 
 *-------------------------------------------------------------------------------
 *--- (2a) Format state income sheets
@@ -181,4 +201,92 @@ rename v corruption
 
 save "$DAT/corruption", replace
 
+*-------------------------------------------------------------------------------
+*--- (2f) Seguro popular by state
+*-------------------------------------------------------------------------------
+use "$MUN/seguroPopularMonth"
+collapse SP, by(id year)
+destring id, gen(munid)
+gen stateid = floor(munid/1000)
+collapse SP, by(stateid year)
+
+expand 4 if year==2010
+bys stateid year: gen n=_n-1
+replace year=year+n if n!=0
+replace SP = 1 if year>2010
+
+save "$DAT/seguroPopular", replace
+
+*-------------------------------------------------------------------------------
+*--- (2g) Labour market participation by state
+*-------------------------------------------------------------------------------
+foreach ENT of local lName {
+    insheet using "$LAB/`ENT'.csv", comma names clear
+    keep state number year trimeter desocup dsea
+    drop if year<=2001|year>2013
+    rename trimeter trimester
+    rename desocup unemployment
+    rename dsea deseasonUnemployment
+    destring unemp, replace
+    destring desea, replace
+    expand 3
+    bys state year trimester: gen month=_n
+    replace month=month+3 if trimester=="II"
+    replace month=month+6 if trimester=="III"
+    replace month=month+9 if trimester=="IV"
+    save "$LAB/`ENT'", replace
+}
+clear
+
+foreach ENT of local lName {
+    append using "$LAB/`ENT'"
+}
+tostring number, gen(id)
+
+gen length=length(id)
+gen zero="0" if length==1
+egen stateid=concat(zero id)
+drop id zero length number
+
+collapse unemployment deseasonUnemp, by(year state stateid)
+destring stateid, gen(stateNum)
+
+sort state year
+
+save "$DAT/Labour", replace
+
+
+
+
+*-------------------------------------------------------------------------------
+*--- (3) Merge everything together
+*-------------------------------------------------------------------------------
+use "$POP/populationStateYear"
+drop month
+keep if Age<100
+keep Age stateName stateNum year_2002-year_2013
+reshape long year_, i(Age stateName stateNum) j(year)
+rename year_ population
+reshape wide population, i(stateName stateNum year) j(Age)
+drop stateNum
+gen  stateNum = .
+
+
+tokenize `popName'
+foreach num of numlist `popNum' {
+    replace stateNum = `num' if stateName == "`1'"
+    macro shift
+}
+
+
+merge 1:1 stateNum year using "$DAT/Labour"
+drop _merge
+
+
+
+
+*merge all above, merge in labour, merge in contracep
+
+
 cd "$SOR"
+exit
