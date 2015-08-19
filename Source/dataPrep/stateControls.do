@@ -399,7 +399,7 @@ append using `f02' `f03' `f04' `f05' `f06' `f07' `f08' `f09' `f10' `f11' `f12'
 collapse rural (rawsum) births* [pw=birthsOccurring30], by(cve_ent ano_nac nomb)
 rename ano_nac year
 rename cve_ent stateNum
-save "$DAT/births"
+save "$DAT/births", replace
 
 
 *-------------------------------------------------------------------------------
@@ -413,7 +413,10 @@ merge 1:1 stateNum year using "$DAT/stateData"
 *-------------------------------------------------------------------------------
 order state stateid stateName stateNum fullName nombre
 
-egen populationWomen   = rowsum(population0-population99)
+destring totalIncome,   replace
+destring totalSpending, replace
+
+egen populationWomen   = rowtotal(population0-population99)
 replace totalIncome    = totalIncome  /populationWomen
 replace totalSpending  = totalSpending/populationWomen
 replace GDP            = GDP          /populationWomen
@@ -433,6 +436,7 @@ lab var stateName      "State name: upper and lower case, no spaces"
 lab var stateNum       "INEGI state identifier: numeric"
 lab var fullName       "State name: With accents, and spaces"
 lab var birthStateName "State name as per birth records"
+lab var year           "Year of birth"
 lab var rural          "Proportion of births occurring in rural areas"
 lab var unemployment   "Unemployment rate (INEGI)"
 lab var deseasonUnempl "Unemployment rate deseasoned (INEGI)"
@@ -445,7 +449,7 @@ lab var anyRecent      "Adults used any protection at most recent intercourse"
 lab var seguroPopular  "Percent of municipalities in state with Seguro Popular"
 lab var totalIncome    "Total state income divided by number of women 0-99"
 lab var totalSpending  "Total state spending divided by number of women 0-99"
-lab var totalIncome    "Total state GDP divided by number of women 0-99"
+lab var GDP            "Total state GDP divided by number of women 0-99"
 lab var populationWome "Total number of women aged 0-99"
 lab var noRead         "Percent of people over age 14 who can't read"
 lab var noSchool       "Percent of people aged 6-14 who aren't enroled"
