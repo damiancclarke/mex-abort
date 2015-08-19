@@ -30,6 +30,7 @@ global DAT "~/investigacion/2014/MexAbort/Data/State"
 global POP "~/investigacion/2014/MexAbort/Data/Population"
 global MUN "~/investigacion/2014/MexAbort/Data/Municip"
 global LAB "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
+global CON "~/investigacion/2014/MexAbort/Data/Contracep"
 global LOG "~/investigacion/2014/MexAbort/Log"
 global SOR "~/investigacion/2014/MexAbort/Source/dataPrep"
 
@@ -43,6 +44,12 @@ local lName aguascalientes   baja_california   baja_california_sur   campeche
    nayarit  nuevo_leon  oaxaca  puebla queretaro quintana_roo san_luis_potosi
    sinaloa sonora tabasco tamaulipas tlaxcala veracruz_de_ignacio_de_la_llave
    yucatan zacatecas;
+local fName `" "Aguascalientes" "Baja California" "Baja California Sur"
+   "Campeche" "Chiapas" "Chihuahua" "Coahuila" "Colima" "Distrito Federal"
+   "Durango" "Guanajuato" "Guerrero" "Hidalgo" "Jalisco" "Michoacán" "Morelos"
+   "México" "Nayarit" "Nuevo León" "Oaxaca" "Puebla" "Querétaro" "Quintana Roo"
+   "San Luis Potosí" "Sinaloa"  "Sonora" "Tabasco" "Tamaulipas" "Tlaxcala"
+   "Veracruz" "Yucatán" "Zacatecas" "';
 local popName Chihuahua Sonora Coahuila Durango Oaxaca Tamaulipas Jalisco
    Zacatecas  BajaCaliforniaSur Chiapas Veracruz BajaCalifornia NuevoLeon
    Guerrero  SanLuisPotosi Michoacan Campeche Sinaloa QuintanaRoo Yucatan
@@ -62,7 +69,7 @@ foreach num of numlist 6(1)18 {
     insheet using income/years.csv.`num', comma clear
     keep in 4/35
     keep v1 v13
-    rename v1 stateName
+    rename v1 fullName
     rename v13 totalIncome
     gen year = 1995+`num'
     tempfile f`num'
@@ -83,7 +90,7 @@ foreach num of numlist 6(1)18 {
     insheet using spending/years.csv.`num', comma clear
     keep in 4/35
     keep v1 v13
-    rename v1 stateName
+    rename v1 fullName
     rename v13 totalIncome
     gen year = 1995+`num'
     tempfile f`num'
@@ -104,19 +111,19 @@ cap mkdir GDP
 
 insheet using GDP/GDP.csv, comma clear
 keep in 4/35
-rename v1 stateName
+rename v1 fullName
 destring v12, replace
-reshape long v, i(state) j(year)
+reshape long v, i(fullName) j(year)
 rename v GDP
 replace year=2001+year
 expand 4 if year==2003
-bys stateName year: gen n=_n
+bys fullName year: gen n=_n
 replace GDP = . if n != 1
 replace year = year-n+1 if n != 1
 drop n
-bys stateName (year): ipolate GDP year, gen(GDPfull) epolate
+bys fullName (year): ipolate GDP year, gen(GDPfull) epolate
 gen GDP03 = GDP if year==2003
-bys stateName: egen GDPreplace = min(GDP03)
+bys fullName: egen GDPreplace = min(GDP03)
 replace GDP = GDPfull
 replace GDP = GDPreplace if GDP<0
 drop GDPfull GDP03 GDPreplace
@@ -147,23 +154,23 @@ rename v16 noHealth10
 rename v38 vulnerable0
 rename v39 vulnerable5
 rename v40 vulnerable10
-rename v1 stateName
+rename v1 fullName
 
-reshape long noRead noSchool noPrimary noHealth vulnerable, i(stateName) j(year)
+reshape long noRead noSchool noPrimary noHealth vulnerable, i(fullName) j(year)
 replace year = year+2000
 foreach var of varlist no* vulnerable {
     replace `var' = subinstr(`var',",",".", 1)
     destring `var', replace
 }
 expand 5
-bys stateName year: gen n=_n
+bys fullName year: gen n=_n
 foreach var of varlist no* vulnerable {
     replace `var'=. if n!=1
 }
 replace year = year+n-1 if n!=1 
 drop if year==2014
 foreach var of varlist no* vulnerable {
-    bys stateName (year): ipolate `var' year, epolate gen(i_`var')
+    bys fullName (year): ipolate `var' year, epolate gen(i_`var')
     replace `var'=i_`var' if `var'==.
     drop i_`var'
 }
@@ -179,25 +186,32 @@ cap mkdir corrup
 
 insheet using corrup/corruption.csv, comma clear
 keep in 4/35
-rename v1 stateName
+rename v1 fullName
 
-reshape long v, i(stateName) j(year)
+reshape long v, i(fullName) j(year)
 replace year= 1997+2*year
 replace year=2010 if year==2009
 expand 2 if year<2007
-bys stateName year: gen n=_n
+bys fullName year: gen n=_n
 replace year=year+n-1 if n!=1&year<2007 
 drop n
 expand 3 if year==2007
-bys stateName year: gen n=_n
+bys fullName year: gen n=_n
 replace year=year+n-1 if n!=1
 drop n
 expand 4 if year==2010
-bys stateName year: gen n=_n
+bys fullName year: gen n=_n
 replace year=year+n-1 if n!=1
 drop n
 destring v, replace
 rename v corruption
+
+replace fullName = "Coahuila"  if fullName=="Coahuila de Zaragoza"
+replace fullName = "Jalisco"   if regexm(fullName,"Jalisco")
+replace fullName = "Michoacán" if fullName=="Michoacán de Ocampo"
+replace fullName = "Puebla"    if regexm(fullName, "Puebla")
+replace fullName = "Veracruz"  if fullName=="Veracruz de Ignacio de la Llave"
+
 
 save "$DAT/corruption", replace
 
@@ -214,6 +228,8 @@ expand 4 if year==2010
 bys stateid year: gen n=_n-1
 replace year=year+n if n!=0
 replace SP = 1 if year>2010
+rename stateid stateNum
+drop n
 
 save "$DAT/seguroPopular", replace
 
@@ -280,13 +296,32 @@ foreach num of numlist `popNum' {
 
 
 merge 1:1 stateNum year using "$DAT/Labour"
+drop _merge 
+merge 1:1 stateid year using "$CON/Contraception"
+drop if year==2013|year==2000|year==2001
+drop _merge
+merge 1:1 stateNum year using "$DAT/seguroPopular"
+drop if year==2013
 drop _merge
 
+gen fullName = ""
+tokenize `lName'
+foreach name of local fName {
+    replace fullName = "`name'" if state=="`1'" 
+    macro shift
+}
+
+foreach dat in stateIncome stateSpending stateGDP socialIndicators corruption {
+    merge 1:1 fullName year using "$DAT/`dat'"
+    drop if year==2013|year==2001|year==2000
+    drop _merge
+}
 
 
 
-*merge all above, merge in labour, merge in contracep
-
-
+*-------------------------------------------------------------------------------
+*--- (X) Clean up
+*-------------------------------------------------------------------------------
+log close
 cd "$SOR"
-exit
+
