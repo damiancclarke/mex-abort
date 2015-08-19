@@ -27,6 +27,7 @@ cap log close
 *--- (1) globals
 *-------------------------------------------------------------------------------
 global DAT "~/investigacion/2014/MexAbort/Data/State"
+global BIR "~/database/MexDemografia/Natalidades"
 global POP "~/investigacion/2014/MexAbort/Data/Population"
 global MUN "~/investigacion/2014/MexAbort/Data/Municip"
 global LAB "~/investigacion/2014/MexAbort/Data/Labour/Desocupacion2000_2014"
@@ -77,7 +78,8 @@ foreach num of numlist 6(1)18 {
 }
 
 clear all
-append using `f6' `f7' `f8' `f9' `f10' `f11' `f12' `f13' `f14' `f15' `f16' `f17' `f18'
+append using `f6' `f7' `f8' `f9' `f10' `f11' `f12'
+append using `f13' `f14' `f15' `f16' `f17' `f18'
 save "$DAT/stateIncome", replace
 
 *-------------------------------------------------------------------------------
@@ -91,14 +93,15 @@ foreach num of numlist 6(1)18 {
     keep in 4/35
     keep v1 v13
     rename v1 fullName
-    rename v13 totalIncome
+    rename v13 totalSpending
     gen year = 1995+`num'
     tempfile f`num'
     save `f`num''
 }
 
 clear all
-append using `f6' `f7' `f8' `f9' `f10' `f11' `f12' `f13' `f14' `f15' `f16' `f17' `f18'
+append using `f6' `f7' `f8' `f9' `f10' `f11' `f12'
+append using `f13' `f14' `f15' `f16' `f17' `f18'
 save "$DAT/stateSpending", replace
 
 
@@ -212,6 +215,8 @@ replace fullName = "Michoacán" if fullName=="Michoacán de Ocampo"
 replace fullName = "Puebla"    if regexm(fullName, "Puebla")
 replace fullName = "Veracruz"  if fullName=="Veracruz de Ignacio de la Llave"
 
+replace corruption = subinstr(corruption, ",", ".", 1)
+destring corruption, replace
 
 save "$DAT/corruption", replace
 
@@ -317,11 +322,144 @@ foreach dat in stateIncome stateSpending stateGDP socialIndicators corruption {
     drop _merge
 }
 
+save "$DAT/stateData", replace
 
+*-------------------------------------------------------------------------------
+*--- (4) Birth data
+*-------------------------------------------------------------------------------
+use "$BIR/ENTMUN"
+keep if cve_mun==0
+drop v4
+tempfile areas
+save `areas'
+
+foreach yy in 02 03 04 05 06 07 08 09 10 11 12 13 {
+    use "$BIR/NACIM`yy'"
+    keep if ano_nac>2001&ano_nac<2013
+    gen birthsRegistered=1
+    gen birthsResidents=1
+    gen birthsOccurring=1
+    gen rural = tloc_regis<=7
+
+    preserve
+    collapse (count) birthsRegistered, by(ent_regis edad_madn ano_nac)
+    rename ent_regis cve_ent
+    reshape wide birthsRegistered, i(cve_ent ano_nac) j(edad_madn)
+    foreach num of numlist 10(1)50 99 {
+        replace birthsRegistered`num'=0 if birthsRegistered`num'==.
+    }
+    tempfile registered
+    save `registered'
+
+    restore
+    preserve
+    collapse (count) birthsResidents, by(ent_resid edad_madn ano_nac)
+    rename ent_resid cve_ent
+    reshape wide birthsResidents, i(cve_ent ano_nac) j(edad_madn)
+    foreach num of numlist 10(1)50 99 {
+        replace birthsResidents`num'=0 if birthsResidents`num'==.
+    }
+    tempfile residents
+    save `residents'
+
+    restore
+    preserve
+    collapse (count) birthsOccurring, by(ent_ocurr edad_madn ano_nac)
+    rename ent_ocurr cve_ent
+    reshape wide birthsOccurring, i(cve_ent ano_nac) j(edad_madn)
+    foreach num of numlist 10(1)50 99 {
+        replace birthsOccurring`num'=0 if birthsOccurring`num'==.
+    }
+    tempfile occurring
+    save `occurring'
+
+    restore
+    collapse rural, by(ent_regis ano_nac)
+    rename ent_regis cve_ent
+    tempfile rural
+    save `rural'
+
+
+    use `occurring', clear
+    merge 1:1 cve_ent ano_nac using `residents'
+    drop _merge
+    merge 1:1 cve_ent ano_nac using `registered'
+    drop _merge
+    
+    merge m:1 cve_ent using `areas'
+    drop if _merge==2
+    drop _merge cve_mun
+    merge 1:1 cve_ent ano_nac using `rural'
+    drop _merge
+
+    tempfile f`yy'
+    save `f`yy''
+}
+append using `f02' `f03' `f04' `f05' `f06' `f07' `f08' `f09' `f10' `f11' `f12'
+collapse rural (rawsum) births* [pw=birthsOccurring30], by(cve_ent ano_nac nomb)
+rename ano_nac year
+rename cve_ent stateNum
+save "$DAT/births"
+
+
+*-------------------------------------------------------------------------------
+*--- (5) Merge covariates to birth data
+*-------------------------------------------------------------------------------
+merge 1:1 stateNum year using "$DAT/stateData"
+
+
+*-------------------------------------------------------------------------------
+*--- (6) Rename, label
+*-------------------------------------------------------------------------------
+order state stateid stateName stateNum fullName nombre
+
+egen populationWomen   = rowsum(population0-population99)
+replace totalIncome    = totalIncome  /populationWomen
+replace totalSpending  = totalSpending/populationWomen
+replace GDP            = GDP          /populationWomen
+
+rename nombre birthStateName
+rename SP     seguroPopular
+rename _merge mergedBirths
+
+foreach num of numlist 10(1)50 99 {
+    lab var birthsOccurring`num'  "Number of births occurring in state: age `num'"
+    lab var birthsRegistered`num' "Number of births registered in state: age `num'"
+    lab var birthsResidents`num'  "Number of births of state residents: age `num'"
+}
+lab var state          "State name: lower case, underscore instead of spaces"
+lab var stateid        "INEGI state identifier: string, two digits"
+lab var stateName      "State name: upper and lower case, no spaces"
+lab var stateNum       "INEGI state identifier: numeric"
+lab var fullName       "State name: With accents, and spaces"
+lab var birthStateName "State name as per birth records"
+lab var rural          "Proportion of births occurring in rural areas"
+lab var unemployment   "Unemployment rate (INEGI)"
+lab var deseasonUnempl "Unemployment rate deseasoned (INEGI)"
+lab var condomFirstTee "Teenagers used condom at first intercourse"
+lab var condomRecentTe "Teenagers used condom at most recent intercourse"
+lab var anyFirstTeen   "Teenagers used any protection at first intercourse"
+lab var adolescentKnow "Teenager reports knowing about contraceptives"
+lab var condomRecent   "Adults used condom at most recent intercourse"
+lab var anyRecent      "Adults used any protection at most recent intercourse"
+lab var seguroPopular  "Percent of municipalities in state with Seguro Popular"
+lab var totalIncome    "Total state income divided by number of women 0-99"
+lab var totalSpending  "Total state spending divided by number of women 0-99"
+lab var totalIncome    "Total state GDP divided by number of women 0-99"
+lab var populationWome "Total number of women aged 0-99"
+lab var noRead         "Percent of people over age 14 who can't read"
+lab var noSchool       "Percent of people aged 6-14 who aren't enroled"
+lab var noPrimary      "Percent of people over 14 who haven't completed primary"
+lab var noHealth       "Percent of residents with no health rights"
+lab var vulnerable     "Vulnerabilty index (lower=less vulnerable)"
+lab var corruption     "Degree of corruption (lower=less corrupt)"
+
+lab data "State*year varying controls and birth data (DCC, Aug 2015)"
 
 *-------------------------------------------------------------------------------
 *--- (X) Clean up
 *-------------------------------------------------------------------------------
+save "$DAT/stateData", replace
 log close
 cd "$SOR"
 
