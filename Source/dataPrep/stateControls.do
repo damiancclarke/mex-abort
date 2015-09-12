@@ -340,7 +340,14 @@ foreach yy in 02 03 04 05 06 07 08 09 10 11 12 13 {
     gen birthsResidents=1
     gen birthsOccurring=1
     gen rural = tloc_regis<=7
-
+    gen PrimaryIncomplete   = escol_mad <= 3 if escol_mad < 8
+    gen PrimaryComplete     = escol_mad == 4 if escol_mad < 8
+    gen SecondaryComplete   = escol_mad == 5 if escol_mad < 8
+    gen PreparatoryComplete = escol_mad == 6 if escol_mad < 8
+    gen ProfessionalEduc    = escol_mad == 7 if escol_mad < 8
+    gen singleMother        = edociv_mad == 1 if edociv_mad!=9
+    local dV PrimaryI PrimaryC SecondaryC PreparatoryC ProfessionalEd singleM
+    
     preserve
     collapse (count) birthsRegistered, by(ent_regis edad_madn ano_nac)
     rename ent_regis cve_ent
@@ -372,13 +379,21 @@ foreach yy in 02 03 04 05 06 07 08 09 10 11 12 13 {
     }
     tempfile occurring
     save `occurring'
-
     restore
+
+    preserve
+    collapse `dV', by(ent_resid ano_nac)
+    rename ent_resid cve_ent
+    dis "check here"
+    merge 1:1 cve_ent ano_nac using `residents'
+    drop _merge
+    save `residents', replace
+    restore
+    
     collapse rural, by(ent_regis ano_nac)
     rename ent_regis cve_ent
     tempfile rural
     save `rural'
-
 
     use `occurring', clear
     merge 1:1 cve_ent ano_nac using `residents'
@@ -395,8 +410,10 @@ foreach yy in 02 03 04 05 06 07 08 09 10 11 12 13 {
     tempfile f`yy'
     save `f`yy''
 }
+
 append using `f02' `f03' `f04' `f05' `f06' `f07' `f08' `f09' `f10' `f11' `f12'
-collapse rural (rawsum) births* [pw=birthsOccurring30], by(cve_ent ano_nac nomb)
+collapse rural `dV' (rawsum) births* [pw=birthsOccurring30], /*
+*/ by(cve_ent ano_nac nomb)
 rename ano_nac year
 rename cve_ent stateNum
 save "$DAT/births", replace
@@ -457,6 +474,13 @@ lab var noPrimary      "Percent of people over 14 who haven't completed primary"
 lab var noHealth       "Percent of residents with no health rights"
 lab var vulnerable     "Vulnerabilty index (lower=less vulnerable)"
 lab var corruption     "Degree of corruption (lower=less corrupt)"
+lab var PrimaryInco    "Proportion of birth mothers with incomplete primary"
+lab var PrimaryComple  "Proportion of birth mothers with complete primary"
+lab var SecondaryCompl "Proportion of birth mothers with complete secondary"
+lab var PreparatoryCom "Proportion of birth mothers with complete secondary"
+lab var ProfessionalEd "Proportion of birth mothers with professional education"
+lab var singleMother   "Proportion of birth mothers who are single"
+
 
 lab data "State*year varying controls and birth data (DCC, Aug 2015)"
 
