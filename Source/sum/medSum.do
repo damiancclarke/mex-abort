@@ -37,6 +37,7 @@ gen   birthRate   = birth/population*1000
 gen   DF          = stateNum==9
 gen   MexState    = stateNum==15
 gen   DFMex       = stateNum==9|stateNum==15
+
 gen   Reform      = stateNum==9&year>2007
 gen   ReformClose = stateNum==15&year>2007
 gen   after       = year>=2008
@@ -48,7 +49,7 @@ replace ageGroup = 2 if age>=20&age<35
 replace ageGroup = 3 if age>=35&age<40
 replace ageGroup = 4 if age>=40&age<45
 replace birth    = birth/1000
-
+exit
 *-------------------------------------------------------------------------------
 *--- (3) Sum stats by: All, Age, Pre/Post, for each of All, DF, Other
 *-------------------------------------------------------------------------------
@@ -61,9 +62,13 @@ gen    all = 1
 *-------------------------------------------------------------------------------
 *--- (3a) All 
 *-------------------------------------------------------------------------------
+
 foreach sum in birth MMR {
+    if `"`sum'"'=="birth" local wt [fw = population]
+    if `"`sum'"'=="MMR"   local wt [fw = birthsResidents]
+
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(all)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(all)
     reshape long `sum', i(all) j(type)
     drop all
     rename `sum' All
@@ -72,7 +77,7 @@ foreach sum in birth MMR {
     restore
 
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(DFMex)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(DFMex)
     reshape long `sum', i(DFMex) j(type)
     reshape wide `sum', i(type) j(DFMex)
     rename `sum'0 Other
@@ -87,7 +92,7 @@ foreach sum in birth MMR {
     *--- (3b) By Age
     *---------------------------------------------------------------------------
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(all ageGroup)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(all ageGroup)
     reshape long `sum', i(all ageGroup) j(type)
     drop all
     rename `sum' All
@@ -96,7 +101,7 @@ foreach sum in birth MMR {
     restore
 
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(DFMex ageGroup)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(DFMex ageGroup)
     reshape long `sum', i(DFMex ageGroup) j(type)
     reshape wide `sum', i(type ageGroup) j(DFMex)
     rename `sum'0 Other
@@ -112,7 +117,7 @@ foreach sum in birth MMR {
     *--- (3c) By Pre/Post
     *-------------------------------------------------------------------------------
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(all after)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(all after)
     reshape long `sum', i(all after) j(type)
     drop all
     rename `sum' All
@@ -121,7 +126,7 @@ foreach sum in birth MMR {
     restore
 
     preserve
-    collapse `sum'1 (rawsum) `sum'2 [fw=population], by(DFMex after)
+    collapse `sum'1 (rawsum) `sum'2 `wt', by(DFMex after)
     reshape long `sum', i(DFMex after) j(type)
     reshape wide `sum', i(type after) j(DFMex)
     rename `sum'0 Other
@@ -161,3 +166,5 @@ foreach sum in birth MMR {
     outsheet using "$OUT/`sum'Sum.txt", delimiter("&") replace noquote
     restore
 }
+
+!python formatMedSum.py
