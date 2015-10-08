@@ -1,0 +1,716 @@
+\documentclass[a4paper, 11pt]{article}
+
+%-------------------------------------------------------------------------------
+%--- (a) Required Packages
+%-------------------------------------------------------------------------------
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{authblk}
+\usepackage[english]{babel}
+\usepackage[para,online,flushleft]{threeparttable}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage[usenames, dvipsnames]{color}
+\usepackage{epstopdf}
+\usepackage[capposition=top]{floatrow}
+\usepackage{framed}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{lscape}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{rotating}
+\usepackage{subcaption}
+\usepackage{subfloat}
+\usepackage{url}
+\usepackage{wrapfig}
+ \usepackage{multicol}
+\usepackage[toc,page]{appendix}
+%-------------------------------------------------------------------------------
+%--- (b) Specific margins
+%-------------------------------------------------------------------------------
+\setlength  \textwidth{\paperwidth}
+\setlength  \textheight{\paperheight}
+\setlength  \oddsidemargin{3cm}
+\setlength  \topmargin{-1.2cm}
+\setlength  \footnotesep{2ex}
+\addtolength\textheight{-6cm}
+\addtolength\textwidth{-6cm}
+\addtolength\oddsidemargin{-1in}
+
+
+
+%-------------------------------------------------------------------------------
+%--- (c) Internal Ref stype
+%-------------------------------------------------------------------------------
+\hypersetup{                                                                                                   
+    colorlinks=true,   
+    linkcolor=BlueViolet,
+    citecolor=BlueViolet,
+    filecolor=BlueViolet,
+    urlcolor=BlueViolet
+}
+
+
+%-------------------------------------------------------------------------------
+%--- (1) Title
+%-------------------------------------------------------------------------------
+\title{The Effect of Legalised Induced Abortion on Births and Maternal Deaths: 
+A Population Based Cohort Study from Mexico}
+
+\author[1]{Damian Clarke}
+\author[2]{Hanna Mühlrad}
+
+
+\affil[2]{University of Gothenburg \\
+  \url{hanna.muhlrad@gu.se}}
+\affil[1]{University of Oxford \\
+  \url{damian.clarke@economics.ox.ac.uk}}
+
+
+%-------------------------------------------------------------------------------
+%--- (2) Document
+%---     Notes: Abstract file follows requested 'extended abstract' style of the
+%---     BMJ.  Discussion section also follows the BMJ's in house style. A quick
+%---     notes box is added at the end of the document in-line with original ar-
+%---     ticle requirements for the BMJ.
+%-------------------------------------------------------------------------------
+\begin{document}
+\begin{spacing}{1.5}
+
+\maketitle
+\begin{abstract}
+\noindent \textbf{Objective:} To determine the effect of access to safe, legal 
+abortion on rates of birth, and rates of maternal death.\\
+\textbf{Design:} Population based cohort study. Quasi-experimental set-up \\
+\textbf{Setting and participants:} 23,151,080 live births and 11,885 maternal 
+deaths in Mexico from 2002 to 2011. \\
+\textbf{Interventions:} Decriminalizing induced abortion in Mexico City (Federal District) in April 2007. \\
+\textbf{Main outcome measures:} Varition in the rates of births and maternal 
+deaths in abortion and non-abortion states following an abortion reform in Mexico 
+in 2007.  Prevailing differences prior to the reform are captured using state 
+controls, and controls are included for concurrent variables including access to 
+hospitals, contraceptives, and othe social reforms.\\
+\textbf{Results:} The abortion reform resulted in a reduction in total birth rate between ($\beta$ = 1.75-2.32, p<0.01) births per 1000 women in fertile age 15-44, and a reduction in MMR between ($\beta$ = 9.93-11.63, p<0.01)  deaths per 100 000 live births. \\
+\textbf{Conclusions:} Our results suggest that legalizing elective abortion is potentially important for preventing unwanted pregnancies and maternal mortality, highly relevant for meeting the Millennium Development Goals (MDG) 5 of improved maternal health globally.  
+\end{abstract}
+
+ 
+
+ 
+ 
+%-------------------------------------------------------------------------------
+%--- (3) Document
+%---    Notes: I'm copying the sections and subsections for the BMJ article 
+%---	"Maternal overweight and obesity in early pregnancy
+%---    and risk of infant mortality: a population based cohort study in Sweden"
+%-------------------------------------------------------------------------------
+\newpage
+\begin{multicols}{2}
+\section{Introduction}
+ Far from all women have the ability to control their fertility. As a result, unintended pregnancies make an estimated 22 million women worldwide undergo unsafe abortions every year, procedures that account for 13 percent of all maternal deaths (WHO, 2014). Legal restrictions and low accessibility to contraceptives are the main causes of unsafe abortions, implying that legalizing induced abortion could serve as an effective measure for improving women's health (Grimes, 2006; Brown, 2007; Kulczycki, 2011). 
+ 
+ In this paper, we examine the 2007 abortion reform in Mexico City. Abortion laws in Mexico are determined at state level where Mexico City (or the Federal District), the administrative capital and a region of Mexico, is the only district out of Mexico's 32 districts that allows for elective abortion during the first trimester. This reform provided all women, with residency in Mexico City and above age 18, with access to legal and safe abortion procedures free of charge during the first trimester for all reasons. The reform was a radical change from previous laws which banned abortion in all but extreme circumstances of rape, to save the mother’s life, or in the case of fetal malformation. 
+ 
+ By using the 2007 abortion reform in Mexico City, we study the effect of accessing legal and safe abortion services free of charge on fertility outcomes and maternal mortality. This analysis is carried out using Mexican censal data from National Institute of Statistics and Geography (INEGI) on all registered births and maternal deaths during 2002-2011. We use a quasi-experimental set up, since abortion laws are determined at state level providing sub-national variation, employing a difference in difference design to determine the effect of the reform. The results indicate that a drop in the birth rate of 1.7-2.7 births per 1000 women in fertile ages 15-44 can be attributed to the abortion reform. Analyzing heterogeneous effects across age groups, we find that the drop in birth rates is the highest amongst teenage women (15-24) and women aged 34-39. Moreover, we find that access to legal and safe abortion decreases maternal mortality ratio by 9.93-11.63 maternal deaths per 100 000 live births. Heterogeneity analysis shows that this effect is driven by ages 20-34. 
+ 
+ Our results suggest that legalizing elective abortion is potentially important for preventing unwanted pregnancies and maternal mortality. This result is highly relevant for meeting the Millennium Development Goals (MDG) 5 of improved maternal health globally. The fact that the results indicate that access to legal and safe abortions have a positive effect on maternal and reproductive health in Mexico City, the most urban and developed region of Mexico, implies that more rural and poor areas could benefit greatly from a similar reform.        
+ \subsection{Background}
+ With regards to the highly conservative abortion legislation in the entire Latin American and Caribbean (LAC) region, the abortion reform in Mexico City is distinguishable as a major social and political reform. Abortions are not only illegal but also a criminal offense in many Mexican districts. In several Mexican districts, women suffering from miscarriages are at risk of being prosecuted and sentenced to jail for not protecting their fetus. Before the reform was passed in Mexico City, abortion laws were rather uniform across the districts of Mexico.  Abortion was illegal with the exception of pregnancies resulting from rape, or pregnancies that pose a threat to the mother's life and for some states, in case of severe malformation. In practice however, legal abortions have been described by human rights organizations as extremely difficult to access due to rigid legal barriers even for women who do met the prerequisite for accessing legal abortion. Legal barriers that cause protracted processes, usually involving multiple governmental entities to review the decision, in addition to social stigma explains the low number of legal abortion prior the reform. For an example, in the densely populated Mexico City, only 62 abortions were legally performed during 2001-2007 due to these circumstances,  \cite{Becker}. 
+ 
+ As a substitute to legal options, abortions are made under clandestine and not unusually unsafe settings. In 2009 alone, records from public hospitals show that an estimated 159 000 women were treated for abortion-related complications. Moreover, the estimated national abortion rate in Mexico is 38 abortions per 1000 women in the ages 15-44 (GIRE, 2009), which is considered high internationally \cite{Becker}. Due to the high number of unsafe abortions as well as a growing movement for women's reproductive health rights, a new reform came about legalizing abortion in Mexico City, enabling women to terminate the pregnancy during the first trimester\footnote{For a broader discussion on how the reform came about see Kulczycki (2011)}. The reform makes Mexico City, together with Cuba and Uruguay, the most liberal jurisdiction in terms of abortion legislation in Latin America \citep{Fraser}. 
+ 
+ The reform implied that elective abortion was made available through both the public and private sector. The public health care sector in Mexico is divided on both federal and state level, where the Ministry of Health (MOH) in Mexico City provides abortion procedures at a selected number of MOH-DF hospitals. Other MOH facilities (federal or state funded) are not legally required to provide abortion procedures. The MOH-DF offers abortion procedures free of charge for all residents of Mexico City over 18 years. For women under the age of 18, permission from a parent or guardian is needed. Women with residency outside Mexico City can also access the reform but are charged with a sliding fee scale determined with regard to the woman's socioeconomic background \citep{Kalb}. In 2008, 73 percent of all women who received an abortion through the public health care were women living in Mexico City, 24 percent were living in the district of Mexico and 3 percent were living in other districts. Approximately 90 000 abortions were carried out during 2007-2012 at the MOH-DF facilities. However, this only accounts for the procedures performed at the public sector MOH-DF facilities and not the private sector. The reform also includes free post-abortion contraceptives. Records from public hospitals show that the demand for post-abortion contraceptives is high, for which approximately 82 percent of all women accept contraceptives. This high number explains the low prevalence of repeated abortion procedures.\citep{Becker}. 
+ 
+
+\section{Methods}
+\subsection{Data}
+ Data on births and maternal deaths is retrieved from administrative data files covering all live births and deaths in Mexico. The data is provided by the National Institute of Statistics and Geography (INEGI) and covers in total of 23,151,080 live births and 11,885 maternal deaths among women aged 15-44 during the time period 2002-2011. We use data for the time period 2002-2011 due to availability and quality. The INEGI Birth Register contains information about the date of birth, actual birthplace and the official residency of the mother. In addition, the data also contains information on maternal characteristics such as age, parity, education level, marital status and employment status. The death register has a similar structure as the birth register.
+ 
+ Data on population originates from the National Population Council in Mexico (CONAPO), and is available on state level for all ages. This data is constructed from survey data of a national representative sample of over ten million individuals stratified geographically by municipality. This survey was conducted in 2000, 2005 and 2010, which implies that data between those years and after are imputed.  The economic and educational control variables, are obtained from the National Institute for Federalism and Municipal Development (INAFED) respectivley from the National Education Statistical Information System (SNIE). Information on the roll out of the national health insurence program Seguro Popular is obtained from the INEGI data bank.
+ 
+ In order to compute the birth rates and maternal mortality, the data has the following structure: all births and deaths and other variables are aggregated to state, age and year level. That is, age-specific birth rates and maternal mortality ratios are computed for each state and year resulting in a total of 9600 cells.
+ 
+ 
+\subsection{Outcomes} 
+ The main outcome variables are 1) \textit{Birth Rate} defined as the annual number of births per 1,000 women for each age and state and 2) \textit{Maternal Mortality Rate} refers to the annual number of maternal deaths per 100,000 live births for each age and state. Maternal deaths are according to WHO identified via ICD-10 codes (International Classification of Disease, 10th revision. Codes O00-O99, A34, B20-B24 and F53) and formally defined as "The death of a woman while pregnant or within 42 days of termination of pregnancy, irrespective of the duration and the site of the pregnancy, from any cause related to or aggravated by the pregnancy or its management, but not from accidental or incidental causes", (WHO).
+\subsection{Study design-methods}
+The fact that abortion laws are determined at the state level enables a quasi-experimental set-up, where non-random distribution of treatment can be evaluated. We will use the subnational variation in access to legal and safe induced abortion procedures by employing a difference in difference identification strategy, where the outcomes are compared before and after implementation of the abortion reform across the treated state and untreated states. The quasi-experimental design of difference-in-difference requires that the parallel trend assumption is satisfied, implying that trends in outcome variables in the control area demonstrate the counter-factual outcomes in the treatment area in the absence of the reform. The causal effect of the reform is identifiable, given that the trends before the reform is similar in the treated and untreated areas, no spillover effects occur and that simultaneous reforms do not affect the treated and untreated units in different ways. 
+
+The causal effect of the reform can only be estimated in the absence of spillover effects. While this assumption is likely to be violated for the area located close to the Mexico City, this assumption can still hold for areas further distant from the Mexico City. This assumption is supported by data available from the public hospital records (MOH), showing that approximately 73 percent of all women accessing the reform are women with residency in the Mexico City, 24 percent are resident in the adjacent state of Mexico and only 3 percent of the women accessing the reform are residents in other districts. In order to further mitigate concern for spillover effects in the State of Mexico, which constitute a large part of the greater metropolitan area of Mexico City; the State of Mexico is either controlled for or omitted from the analysis. 
+
+For more details regradring the method and specification see Apendix~\ref{ }  
+ 
+ 
+ \section{Results}
+Table~\ref{reg1} presents the difference-in-difference estimates from OLS regressions of the abortion reform on births and maternal deaths. All outcomes are estimated by first running a simple difference-in-difference specification excluding time-varying controls and then gradually including them. 
+
+This analysis shows a decrease in birth rate between ($\beta$ = 1.75-2.32, p<0.01) births per 1000 women in fertile age 15-44 attributed to the abortion reform (column 1-2 in Table ~\ref{reg1}). Compared to the mean of the dependent variable, this is equivalent to a drop in the total birth rate by 2.0-2.7 percent. These effects are statistically significant below 1 percent significance level. Table~\ref{reg1} further shows the effect of the reform on maternal deaths, indicating that the MMR decreases by ($\beta$ = -9.93-11.63, p<0.01)  deaths per 100 000 live births(column 3-4 in Table ~\ref{reg1}). Compared to the mean of MMR of 70.5 maternal deaths per 100 000 live births, this effect corresponds to decrease in MMR by 14.6-18.6 percent.
+
+The results from the heterogeneity analysis across age groups are presented in Table ~\ref{heteromed}. The reduction in birth rates is highest among teenage women (15-20) with a decrease of ($\beta$ = -3.9, p<0.01) births per corresponding age group. The effect amongst the most fertile ages (20-34) is ($\beta$ = -1.9, p<0.05) births and  ($\beta$ = -2.6, p<0.01) amongst women aged 35-39. For less fertile women (40-44) the impact is small and insignificant ($\beta$ = -0.283, p>0.1).
+
+The results are robust to the inclusion of several control variables such as state level covariates; income, unemployment, GDP, percent of residents without health no health rights, corruption level and vulnerability and the coverage of the national health program Seguro Popular.  
+\section{Discussion}
+\subsection{Principal Findings}
+We find that legalizing induced abortion during the first trimester and providing women with safe abortion procedures free of charge, reduces the total birth rate and maternal mortality ratio for women aged 15-44, by 2.0-2.7 percent and 14.6-18.6 respectively.   
+
+\subsection{Strengths and Weaknesses of the Study}
+ The underlying assumption for the difference in difference method is parallel trends. This key assumption implies that the average change in birth rates and maternal mortality in the control area (all states excluding state of Mexico) should represent the counter-factual outcome in the treatment area (Federal District) in the absence of the abortion reform. While the parallel trend assumption is untestable, parallel trends in the outcome variable prior the reform provides evidence of whether the key assumption is satisfied or not. Even though birth rates and maternal mortality differs in absolute levels, changes in birth rates and mortality are somewhat parallel prior the reform from some age groups, presented in Figure ~\ref{birthTrend} and  ~\ref{mmrTrend}. Moreover, introduction of other programs and reforms during the same time period as the abortion law was passed is also a potential threat to the identification strategy. For instance the national health insurence program Seguro Popular are controll for in all regressions. A further issue is potential inconsistency in the standard errors caused by serial correlation, to mitigate this concern we show that standrad errors are consitent when estimated using wild bootstrapping.  
+\subsection{Relation to Other Studies}
+
+\subsection{Implications for Policy}
+This study provide evidence of how access to legal and safe abortion procudeures result in lower maternal mortality and birth rate, implying that free acess to elective abortion may serve as an effective measure to reduce maternal mortality as well as preventing unwanted pregnancies. These findings are also highly relevant for meeting the Millenium Development Goal (MDG) 5 of improved maternal health globally.        
+\subsection{Unanswered Questions and Future Research}      	    
+The fact that the results indicate that access to legal and safe abortions have a positive effect on maternal and reproductive health in Mexico City, the most urban and developed region of Mexico, implies that more rural and poorer areas would greatly benefit from a similar reform.   
+ \newpage
+ 
+ 
+\end{multicols} 	
+\section{Graphs and Tables}
+\begin{figure}[htpb!]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRate.pdf}
+		\caption{Trends in Birth Rates}
+		\label{birthTrend}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmr.pdf}
+		\caption{Trends in Maternal Mortality Ratio}
+		\label{mmrTrend}
+	\end{subfigure}
+	
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birth.pdf}
+		\caption{Trends in Birth Rates}
+		\label{ }
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmr.pdf}
+		\caption{Trends in Maternal Mortality Ratio}
+		\label{ }
+	\end{subfigure}
+	\caption{Trends in Reform and non-Reform Areas}
+	\label{ }
+	\floatfoot{Note to figure \ref{trends}: Each figure is constructed from 
+		administrative data made available by INEGI.  Trends are constructed based 
+		on population weighted means for all fertile aged women.  The vertical 
+		dashed line represents the date of the reform (for MMR), or 9 months
+		following the date of the reform (for births) to account for the delay in
+		the realisation of births due to gestation.}
+\end{figure}
+
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/tables/Summary.tex}
+
+\section{Regression tables}
+\begin{table}[htpb!]\caption{Main Regression}\label{reg1}
+\begin{threeparttable}
+	  \input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/MainOutcomeMedPaper1.tex}
+	\begin{tablenotes}
+		\footnotesize
+		\item \textit{Notes}.  The table displays the difference in difference estimates from OLS regressions. The sample includes all births for women aged 15-44 for the period 2002-2011. The dependent variables 1: \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age group and state of birth. 2: The dependent variable \textit{Maternal Mortality Rate} refers to the annual number of maternal deaths per 100,000 live births for each age and state. The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors (in parenthesis) are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+	\end{tablenotes} 
+\end{threeparttable}
+\end{table}
+ 
+ 
+ 
+\begin{table}[htpb!]\caption{Heterogenous effects across ages} \label{heteromed}
+	\begin{threeparttable}
+		
+		{\small  \input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/HetroEffectsMed.tex}}
+		\begin{tablenotes}
+			\footnotesize
+			\item \textit{Notes}.  See notes of Table 2 and 3. The table shows the difference-in-difference estimates of the effect of the refrom on (a) birth rates (b) and maternal mortality by age group (15-19, 20-34, 35-39, and 40-44).
+		\end{tablenotes} 
+	\end{threeparttable}
+\end{table}
+
+
+ 	
+ 	 
+
+ 
+
+
+\end{spacing}
+
+ % % % % % % % % % % % % % % % % % % % % % % % % % % %
+ % % % % References % % % % % % % % % % % % % % % % % 
+ % % % % % % % % % % % % % % % % % % % % % % % % % % %
+ 
+ \newpage
+ \singlespacing
+ \bibliographystyle{agsm}
+ \bibliography{bibfile}
+ 
+ \newpage
+ \begin{appendices}
+  
+ 	We estimate the follwing specification:
+ 	\paragraph{specification 1}
+ 	
+ 	
+ 	\begin{eqnarray*}\label{eq1}
+ 		{Outcome_{ast}= \beta Reform_{st} +\beta ReformClose_{st}+} \\  
+ 		{	X_{st}\delta +\alpha_{s} + \nu_{t} +\pi_{a}+ \lambda_{s}*time_{t} +\epsilon_{ast}}   
+ 	\end{eqnarray*}
+ 	
+ 	\noindent where $Outcome_{ast}$ represents the outcome variables; birth rate, log transformed number of births, maternal mortality rate and log transformed number of maternal deaths for age $a$ in state $s$ and year $t$. Treatment status is indicated by $Reform$, which takes the value of 1 in locations and time where the reform was passed. The fixed effects are; state dummies $\alpha_{m}$, year dummies  $\nu_{t}$ and age dummies $\pi_{a}$. $X_{st}$ represents state-level time varying controls such as total output, subsidies, goods produced, number of public workers the roll out of the national health insurance program Seguro Popular.$\gamma_{s}$ is state-specific time trends. The idiosyncratic error term is denoted $\varepsilon_{ast}$ and clustered on state  level.  
+ \section{Placebo}	
+ 	
+ 	  \begin{figure}[htpb!]
+ 	  	\centering	\caption{Placebo tests}
+ 	  	\label{reg2}
+ 	  	\begin{subfigure}{.5\textwidth}
+ 	  		\centering	\caption{Birth Rates}
+ 	  		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/PlacebobirthRate.pdf}
+ 	  		
+ 	  		\label{placebo_br}
+ 	  	\end{subfigure}%
+ 	  	\begin{subfigure}{.5\textwidth}
+ 	  		\centering	\caption{Maternal Mortality Ratio}
+ 	  		\includegraphics[scale=0.55]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Placebommr.pdf}
+ 	  		
+ 	  		\label{placebo_mmr}
+ 	  	\end{subfigure}
+ 	  	\floatfoot{Note to figure ~\ref{reg2}: The coefficient plot shows specification 1 (without controlling for time varying factors), but instead of the using the Reform variable, leads and lags 4 years before and after the refrom are included in order to examine anticipatory effects as well as post treatment effects for birth rate (a) and maternal mortality (b) respectively.}
+ 	  \end{figure}
+ \section{Graphs}	
+
+  \begin{figure}[htpb!]
+  	\centering
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/Trend_birthRate.pdf}
+  		\caption{Trends in Birth Rates}
+  		\label{birthTrend}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/Trend_mmr.pdf}
+  		\caption{Trends in Maternal Mortality Ratio}
+  		\label{mmrTrend}
+  	\end{subfigure}
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/Trend_birth.pdf}
+  		\caption{Trends in Birth Rates}
+  		\label{birthTrend}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/Trend_MMR.pdf}
+  		\caption{Trends in Maternal Mortality Ratio}
+  		\label{mmrTrend}
+  	\end{subfigure}
+  	\caption{Trends in Reform and non-Reform Areas}
+  	\label{trends}
+  	\floatfoot{Note to figure \ref{trends}: Each figure is constructed from 
+  		administrative data made available by INEGI.  Trends are constructed based 
+  		on population weighted means for all fertile aged women.  The vertical 
+  		dashed line represents the date of the reform (for MMR), or 9 months
+  		following the date of the reform (for births) to account for the delay in
+  		the realisation of births due to gestation.}
+  \end{figure}	
+  
+  
+  \begin{figure}[htpb!]
+  	\centering	\caption{Trends in Reform and non-Reform Areas}
+  	\label{trendsAge}
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 
+  		\includegraphics[scale=0.55]{../output/graphs/age.pdf}\caption{Trends in Maternal Age}
+  		\label{age}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 	
+  		\includegraphics[scale=0.55]{../output/graphs/EDAD_PADN.pdf}
+  		\caption{Trends in Maternal Age}
+  		\label{agedad}
+  	\end{subfigure}
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 
+  		\includegraphics[scale=0.55]{../output/graphs/AgeFirstChild.pdf}
+  		\caption{Trends in Maternal Age at First Child}
+  		\label{firstchild_mom}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/AgeFirstChildDad.pdf}
+  		\caption{Trends in Paternal Age at First Child}
+  		\label{firstchild_dad}
+  	\end{subfigure}
+  	
+  	\floatfoot{Note to figure \ref{age}: Each figure is constructed from 
+  		administrative data made available by INEGI.}
+  \end{figure}
+  
+   
+   \subsection{Synthetic Control Group}    
+   
+   \begin{figure}[H] \caption{Synthetic Control Group} \centering
+   	
+   	\begin{subfigure}{.5\textwidth}
+   		\centering 
+   		\includegraphics[scale=0.55]{../output/graphs/synth.pdf}
+   		\caption{MMR}
+   	
+   	\end{subfigure}%
+   	\begin{subfigure}{.5\textwidth}
+   		\centering
+   		\includegraphics[scale=0.55]{../output/graphs/synthBR.pdf}
+   		\caption{Birth Rate}
+   		
+   	\end{subfigure}
+   	
+    
+   \end{figure} 
+   
+  \section{Figures}
+  \begin{figure}[htpb!]
+  	\centering	\caption{Distribution of maternal age and age at first birth before and after the refrom}
+  	\label{trendsAge}
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 
+  		\includegraphics[scale=0.55]{../output/graphs/HistAgeDF.pdf}\caption{Age in Mexico City}
+  		\label{age}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 	
+  		\includegraphics[scale=0.55]{../output/graphs/HistAgeOS.pdf}
+  		\caption{Age in all other states}
+  		\label{agedad}
+  	\end{subfigure}
+  	\begin{subfigure}{.5\textwidth}
+  		\centering 
+  		\includegraphics[scale=0.55]{../output/graphs/HistAgeFirstDF.pdf}
+  		\caption{Age at first birth in Mexico City}
+  		\label{firstchild_mom}
+  	\end{subfigure}%
+  	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[scale=0.55]{../output/graphs/HistAgeOS.pdf}
+  		\caption{Age at first birth in all other states}
+  		\label{firstchild_dad}
+  	\end{subfigure}
+  	
+  	\floatfoot{Note to figure \ref{age}: Each figure is constructed from 
+  		administrative data made available by INEGI.}
+  \end{figure}
+ 	
+ \end{appendices}
+ 
+ 
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+\begin{document}
+	 
+
+\maketitle
+\newpage{}
+\tableofcontents 
+ 
+\newpage{} 
+ \section{Introduction}
+ Unwanted pregnancies make an estimated 22 million women worldwide undergo unsafe abortions every year, these procedures account for 13 percent of all maternal deaths globally. Legal restrictions and low accessibility to contraceptives are the main causes of unsafe abortions, implying that legalizing abortion could serve as an effective measure for decreasing maternal mortality as well as improving various socio-economic conditions for both women and children (WHO, 2014). South America has long been one of the world’s most rigid continent regarding abortion laws. During the last decade however, a few South American countries have encountered major changes in terms of moving towards a more liberal abortion legislation. One of these major changes took place in Mexico City in April 2007, in which elective abortion was legalized during the first trimester \citep{Fraser}.     
+ 
+ Abortion laws in Mexico are determined at state level where Mexico City (or the Federal District), the administrative capital and a region of Mexico, is the only district out of Mexico's 32 districts that allows for elective abortion. This was a radical change from previous laws which banned abortion in all but the extreme circumstances of rape, to save the mother’s life, or in the case of fetal malformation. Besides Mexico City, induced abortions are illegal and also in many Mexican districts considered a criminal offense. Women suffering from miscarriages are at risk of being prosecuted and sentenced to jail for not protecting their fetus.  
+ 
+ Before the reform was passed in the Federal district, abortion laws were rather uniform across the districts of Mexico. Abortion was illegal with the exception of pregnancies resulting from rape, or pregnancies that pose a threat to the mother's life and for some states, in case of severe malformation. At the same time as the reform was passed in Mexico City, 18 states amended to an even more conservative law of abortion, defining life starting at conception. In practice however, legal abortions have been extremely difficult to access due to rigid legal barrier even for women who do met the prerequisite for accessing legal abortion. For an example, in Mexico City, only 62 legal abortions were legally performed during 2001-2007 due to these circumstances,  \cite{Becker}. As a substitute to legal options, abortions are made under clandestine and not unusually unsafe settings. In 2009 alone, records from public hospitals show that an estimated 159 000 women were treated for abortion-related complications. Moreover, the estimated national abortion rate in Mexico is 38 abortions per 1000 women in the ages 15-44 (GIRE, 2009), which is considered high internationally \cite{Becker}.  
+ As a response to the high number of unsafe abortions as well as a growing movement for women's reproductive health rights, a new reform came about legalizing abortion in Mexico City, enabling women to terminate the pregnancy during the first trimester Kulczycki (2011). The reform implied that elective abortion was made available through both the public and private health care system. The public health care sector in Mexico is divided on both federal and state level, where the Ministry of Health (MOH) in Mexico City provides abortion procedures at a selected number of MOH-DF hospitals. Other MOH facilities (federal or state funded) are not legally required to provide abortion procedures. The MOH-DF offers abortion procedures free of charge for all residents of Mexico City above the age 18. For women under the age of 18, permission from a parent or guardian is needed. Women with residency outside Mexico City can also access the reform but are charged with a sliding fee scale determined with regard to the woman's socioeconomic background \citep{Kalb}.  In 2008, 73 percent of all women who received an abortion through the public health care were women living in Mexico City, 24 percent were living in the surrounding state of Mexico and 3 percent were living in other districts. The number of women outside from Mexico City and the surrounding state of Mexico are increasingly using the abortion service in Mexico City, the total fraction has increased from 3 percent in 2008 to 6 percent in 2011 (GIRE, 2013). Approximately 90 000 abortions were carried out during 2007-2012 at the MOH-DF facilities. However, this only accounts for the procedures performed at the public sector MOH-DF facilities and not the private sector \citep{Becker}.
+\section{The Abortion Reform}
+
+On April 24, 2007 Mexico City passed a law which legalized abortion under all circumstances during the first 12 weeks of pregnancy. Abortion laws in Mexico are determined at state level where Mexico City (or the Federal District), the administrative capital and a region of Mexico, is the only district out of Mexico's 32 districts that allows for elective abortion. This was a radical change from previous laws which banned abortion in all but the extreme circumstances of rape, to save the mother’s life, or in the case of fetal malformation. This makes Mexico City, together with Cuba and Uruguay, the most liberal jurisdiction in terms of abortion legislation in Latin America \citep{Fraser}. 
+
+With regards to the highly conservative abortion legislation in the entire Latin American and Caribbean (LAC) region, the abortion reform in Mexico City is distinguishable as a major social and political reform. Abortions are not only illegal but also a criminal offense in many Mexican districts. In several Mexican districts, women suffering from miscarriages are at risk of being prosecuted and sentenced to jail for not protecting their fetus. For example, between 2009 and 2011 approximately 700 women suffered legal consequences for the crime of abortion (GIRE). 
+
+Before the reform was passed in the Federal district, abortion laws were rather uniform across the districts of Mexico.  Abortion was illegal with the exception of pregnancies resulting from rape, or pregnancies that pose a threat to the mother's life and for some states, in case of severe malformation.  In practice however, legal abortions have been described by human rights organizations as extremely difficult to access due to rigid legal barrier even for women who do met the prerequisite for accessing legal abortion. Legal barriers that cause protracted processes, usually involving multiple governmental entities to review the decision, in addition to social stigma explains the low number of legal abortion prior the reform. For an example, in the densely populated Federal district, only 62 legal abortions were legally performed during 2001-2007 due to these circumstances,  \cite{Becker}. As a substitute to legal options, abortions are made under clandestine and not unusually unsafe settings.  Due to the high number of unsafe abortions as well as a growing movement for women's reproductive health rights, a new reform came about legalizing abortion in Mexico City, enabling women to terminate the pregnancy during the first trimester. For a broader discussion on how the reform came about see Kulczycki (2011). 
+
+The reform implied that elective abortion was made available through both the public and private sector. The public health care sector in Mexico is divided on both federal and state level, where the Ministry of Health (MOH) in Mexico City provides abortion procedures at a selected number of MOH-DF hospitals. Other MOH facilities (federal or state funded) are not legally required to provide abortion procedures. The MOH-DF offers abortion procedures free of charge for all residents of Mexico City that are over 18 years. For women under the age of 18, permission from a parent or guardian is needed. Women with residency outside Mexico City can also access the reform but are charged with a sliding fee scale determined with regard to the woman's socioeconomic background \citep{Kalb}.  In 2008, 73 percent of all women who received an abortion through the public health care were women living in Mexico City, 24 percent were living in the district of Mexico and 3 percent were living in other districts. The number of women outside from Mexico City and the surrounding state of Mexico are increasingly using the abortion service in Mexico City, the total fraction has increased from 3 percent in 2008 to 6 percent in 2011 (GIRE, 2013). Approximately 90 000 abortions were carried out during 2007-2012 at the MOH-DF facilities. However, this only accounts for the procedures performed at the public sector MOH-DF facilities and not the private sector \citep{Becker}.
+
+ 
+\section{Previous Literature}
+The 1970s U.S. abortion reform has been studied in several contexts, where the impact on various welfare outcomes for both first and second generations have been investigated. \cite{AngristEvans} show how reduced fertility through legalizing abortion improves women's labor market outcomes. By using the U.S. abortion reform as exogenous variation in fertility, they examine the link between teen childbearing and labor market outcomes. Their results show a strong effect on teen marriages for white women while teen fertility effects are stronger for black women. The results from the reduced form suggest that the reform improved schooling outcomes and labor market outcomes for black women. By analyzing the effect of the reform on the labor supply, \cite{Oreffice2003} finds, in a collective household behavior framework, that the reform improved women's household bargaining power.  
+
+The effects of the abortion reform on the second generation have also been studied. Among notable studies are \cite{Gruberetal}, who provide evidence of a substantial increase in the standard of living for children born after the reform. The effects are of significant magnitude, where the "marginal child" is thought to be 50 percent more probable to live in poor conditions and more than 40 percent more likely to die during infancy. More evidence is provided by \cite{DonohueLevitt2001} who argue that the abortion reform could explain as much as 50 percent of the reduction in crime rates during the 1990s. This result is explained by the notion that underprivileged women are more likely to have an abortion and that unwanted babies are less cared for. They reason that this effect is mainly transmitted through decreased birthrate and selection mechanisms. That is, avoiding unwanted pregnancies may decline the overall fertility rate and/or alter the timing of childbearing. The selection mechanism is further explored by \cite{ananat_abortion_2009}, who provide theoretical and empirical evidence of the selection mechanisms from the U.S. abortion reform. They find evidence of positive selection mechanisms due to the reform, showing that babies born after the reform have more advantages in terms of schooling and are less likely of being welfare recipients. \cite{CharlesStephens2002} find further evidence of selection, showing that in utero exposure to the abortion reform in the U.S. reduces substance abuse for adults.
+
+This paper especially relates to \cite{Pop-Eleches} study of the Romanian ban on abortion from the rule of the communist dictator Ceausescu in 1966. Eleches shows that criminalizing abortion has a negative effect on children's education and labor market outcomes when controlling for various background covariates. Moreover, the author also shows how infant mortality as well as outcomes such as later in life outcomes are worse for children born after the ban compared to those born prior.  
+Studies regarding the abortion reform in Mexico City are, to the best of our knowledge, scarce. 
+ 
+  
+\section{Data}
+\subsection{Data Description}
+Data on births and maternal deaths is retrieved from administrative data files covering all live births and deaths in Mexico. The data is provided by the National Institute of Statistics and Geography (INEGI) and covers in total of 23,474,912 births and 14,384 maternal deaths among women aged 15-44 during the time period 2002-2011. We use data for the time period 2002-2011 due to availability and quality. The INEGI Birth Register contains information about the date of birth, actual birthplace and the official residency of the mother. In addition, the data also contains information on maternal characteristics such as age, parity, education level, marital status and employment status. The death register has a similar structure and maternal deaths are identified via ICD codes XXX and XXX.  Maternal death is defined as "The death of a woman while pregnant or within 42 days of termination of pregnancy, irrespective of the duration and the site of the pregnancy, from any cause related to or aggravated by the pregnancy or its management, but not from accidental or incidental causes", (WHO).
+
+Data on population originates from CONAPO (the National Population Council in Mexico), and is available on state level for all ages. This data is constructed from survey data of a national representative sample of over ten million individuals stratified geographically by municipality. This survey was conducted in 2000, 2005 and 2010, which implies that data between those years and after are imputed.  The control variables, are obtained from XXX. 
+
+The data has the following structure, all births and deaths and other variables are aggregated to state, age and year level. That is, age-specific birth rates and maternal mortality ratios are computed for each state and year resulting in a total of 9600 cells. The main outcome variables are 1) \textit{Birth Rate} defined as the annual number of births per 1,000 women for each age and state and 2) \textit{Maternal Mortality Rate} refers to the annual number of maternal deaths per 100,000 live births for each age and state. 
+ 
+  
+
+\section{Descriptive Statistics }
+\subsection{Summary Statistics}
+
+ \begin{sidewaystable}
+ 	 \input{C:/Users/xmuhha/Dropbox/Mexico/output/tables/Summary1}
+ \end{sidewaystable}
+ 
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/tables/Table2a}    
+
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/tables/Table1BirthSumStat}    
+
+
+\subsection{Trends, raw variables}
+\begin{figure}[H] \caption{Birth rate}\label{Mother1}
+\centering	\includegraphics[width = 4in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRate}
+ \end{figure}\footnote{The samples include all births for women aged 10-49 for the period 2002-2011. Birth rate is defined as the annual number of births per 1,000 women for each age and state.Due to potential spillover effects, state of Mexico is omitted}
+
+\begin{figure}[H] \caption{Maternal Mortality Ratio}\label{Mother2}
+\centering\includegraphics[width = 4in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmr}
+	\end{figure} \footnote{The samples include all maternal deaths for women aged 10-49 for the period 2002-2011. Maternal mortality ratio is defined as the annual number of maternal deaths per 100 000 live birth for each age and state. Due to potential spillover effects, state of Mexico is omitted}
+ 
+  
+ \begin{figure}[H] \caption{Age specific birth rates} \centering
+  \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG1}}
+  \subfloat[]{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG2}}\\
+   \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG3}}
+   \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG4}}\\
+    \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG5}}
+    \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG6}}\\
+      \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG7}}
+      \subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_birthRateAgeG8}}\\
+   \end{figure}
+ 
+    
+ \begin{figure}[H] \caption{Age specific birth rates} \centering
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG1}}
+ 	\subfloat[]{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG2}}\\
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG3}}
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG4}}\\
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG5}}
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG6}}\\
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG7}}
+ 	\subfloat{\includegraphics[width = 2.5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_mmrAgeG8}}\\
+ \end{figure}
+ 
+  
+ 
+ \subsection{Synthetic Control Group}    
+ 
+ \begin{figure}[H] \caption{Synthetic Control Group} \centering
+ 	\subfloat[Maternal Mortality Rate]{\includegraphics[width = 5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/synth.pdf}}\\
+ 	\subfloat[Birth Rate]{\includegraphics[width =  5in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/synthBR.pdf}}     
+ \end{figure}  
+ 
+% % % % % % % % % % % % %  REGRESSIONS %  % % % % % % % % % % % % % % % % % % % % % % % % %
+\newpage
+ \section{Empirical Method} 
+ 
+ Since the abortion reform only occurred in the Federal District, a quasi-experimental set-up is used by employing a difference- in- difference analysis comparing outcomes in the Federal District to outcomes in all other districts before and after the reform was passed. The identifying assumption is thus that the trends in outcome variables in the control area demonstrate the counter-factual outcomes in the treatment area in the lack of the reform. Regarding if this assumption is satisfied or not is discussed in the Subsection 6.3 and explored in figures 8 and 9. Moreover, the causal effect of the reform can only be estimated in the absence of spillover effects. While this assumption is likely to be violated for the areas located close to the Federal District, this assumption can still hold for areas further distant from the Federal District. This assumption is supported by data available from the public hospital records (MOH), showing that approximately 73.2 percent of all women accessing the reform are women with residency in the Federal District, 23.5 percent are resident in the adjacent state of Mexico and only 3.3 percent are women from other districts. For this reason, State of Mexico is either controlled for or omitted from the analysis. 
+ 
+ Furthermore, introduction of other programs and reforms during the same time period as the abortion law was passed is also a potential threat to the identification strategy. This is further elaborated on in subsection 6.4. A further issue is potential inconsistency in the standard error caused by serial correlation. This problem is likely to arrive when the time period is long and numbers of groups (i.e. states) are small. A likely outcome during these circumstances is underestimated standard errors leading to falsely significant difference in difference estimates. One possible way to account for this issue is to eliminate the time series feature of the data by collapsing it into a pre- and post-reform period. This topic is further discussed in section.    
+ 
+ The main outcome variables are 1) \textit{Birth Rate} defined as the annual number of births per 1,000 women for each age and state and 2) \textit{Maternal Mortality Rate} defined as the annual number of maternal deaths per 100,000 live births for each age and geographical unit state. For each regression I use two different samples. In Sample 1, state is defined as the state of residency of the mother at the time when the birth certificate was issued. In Sample 2, state is defined as the actual birth place of the child no matter where the mother is resident. A more general discussion of the definition of geographical unit and ultimately treatment status can be found under Section 3. 
+ 
+ \subsection{Main Specification} 
+ 
+ The main specification will control for the contamination effect expected in the state of Mexico by including a binary variable equal to one for women living in the state of Mexico after the reform was passed in the Federal District (equation1). 
+ 
+\subparagraph{specification 1:}
+ 
+ \begin{eqnarray*}\label{eq1}
+ 	{Y_{ast}= \beta Reform_{ast} +\beta ReformClose_{ast}+  X_{st}\delta +\alpha_{s} + }\\
+ 	{\nu_{t} +\pi_{a}+ \lambda_{s}*time_{t} +\epsilon_{ast}}   
+ \end{eqnarray*}
+ 
+ $Y_{ast}$ represents the outcome variables, birth rate and maternal mortality rate, for age $a$ in state $s$ and year $t$. Treatment status is indicated by $Reform$, which takes the value of 1 in locations and time where the reform was passed. The fixed effects are; state dummies $\alpha_{m}$, year dummies  $\nu_{t}$ and age dummies $\pi_{a}$. $X_{st}$ represents state-level time varying controls such as total output, subsidies, goods produced, number of public workers the roll out of the national health insurance program Seguro Popular.$\gamma_{s}$ is state-specific time trends. The idiosyncratic error term is denoted $\varepsilon_{ast}$ and clustered on state  level. Results from this equation can be found in Table~\ref{reg1a} and ~\ref{reg1b}. Heterogenous effects across age groups are explored. Equation~\eqref{eq1} is estimated for 6 different sub-samples of the following ages groups: 15-19, 20-24, 25-29, 30-34, 35-39 and 40-44, presented in Table~\ref{reg3a} and ~\ref{reg3b}.
+ \subsection{Parallel Trends}
+ The underlying assumption for the difference in difference method is parallel trends. This key assumption implies that the average change in birth rates and maternal mortality in the control area (all states excluding state of Mexico) should represent the counter-factual outcome in the treatment area (Federal District) in the absence of the abortion reform. While the parallel trend assumption is untestable, parallel trends in the outcome variable prior the reform provides evidence of whether the key assumption is satisfied or not. Even though birth rates and maternal mortality differs in absolute levels, changes in birth rates and mortality are somewhat parallel prior the reform from some age groups, presented in Figure 4 and 5. Parallel pre-reform trends is to some extent supported by figure 8 and 9, which displays smoothed means of the raw variables for birth rate and maternal mortality. With that being said, the Federal District as the administrative capital of Mexico, is likely to differ from other districts in Mexico in many aspects and dimensions.
+ 
+ \subsection{Potential spillover effects and other identification issues}
+ \subsection{Inference issues}
+  
+
+  
+  \newpage
+  
+\section{Main Results} 
+\begin{table}[H]  
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AllbirthRate.tex}
+\end{table}
+\begin{table}[H] \centering
+{\small  	\caption{Regressions}
+	\subfloat[Birth Rate]{
+	\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AllbirthRate.tex}
+	}
+	\subfloat[Maternal Mortality Rate]{		\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/Allmmr.tex} 
+	}}
+\end{table}\footnote{\textit{Notes}. The table displays the difference in difference estimates from OLS regressions. The samples include all births for women aged 15-44 for the period 2002-2011. The dependent variable \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age and state. The independent variable \textit{Reform} takes the value one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included in all regressions. In equation 2, state specific controls are accounted for. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1} 
+   
+      
+\newpage
+      
+\begin{sidewaystable} \centering     
+	\caption{Heterogeneous Effects Across Age Groups, Birth Rates} 
+\begin{threeparttable}   
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AG_Reg_birthRate.tex} 
+\begin{tablenotes}
+\small
+\item \textit{Notes}.  The table displays the difference in difference estimates from OLS regressions. The sample includes all births for women aged 10-49 for the period 2002-2011. The dependent variable \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age group and state of birth. The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+\end{tablenotes} 
+\end{threeparttable}
+\end{sidewaystable}
+            
+\begin{sidewaystable}\centering  
+		\caption{Heterogeneous Effects Across Age Groups, MMR}   
+\begin{threeparttable}    
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AG_Reg_mmr.tex} 
+\begin{tablenotes}
+\small
+The table displays the difference in difference estimates from OLS regressions. The sample includes all births for women aged 10-49 for the period 2002-2011. The dependent variable \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age and state residency. The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+\end{tablenotes}
+\end{threeparttable}    
+\end{sidewaystable}
+
+    
+\begin{sidewaystable}\centering    
+\caption{Heterogeneous Effects Across Age Groups, Birth Rates (weighted by population)} 
+\begin{threeparttable}   
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AG_Reg_birthRate_weight.tex} 
+\begin{tablenotes}
+\small
+\item \textit{Notes}.  The table displays the difference in difference estimates from OLS regressions weighted by population. The sample includes all births for women aged 10-49 for the period 2002-2011. The dependent variable \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age group and state of birth. The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+\end{tablenotes} 
+\end{threeparttable}
+\end{sidewaystable}
+
+\begin{sidewaystable}\centering    
+\caption{Heterogeneous Effects Across Age Groups, MMR (weighted by population)} 
+\begin{threeparttable}    
+\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/AG_Reg_mmr_weight.tex} 
+\begin{tablenotes}
+\small
+The table displays the difference in difference estimates from OLS regressions weighted by population. The sample includes all births for women aged 15-44 for the period 2001-2011. The dependent variable \textit{Birth Rate} is defined as the annual number of births per 1000 women for each age and state residency. The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+\end{tablenotes}
+\end{threeparttable}    
+\end{sidewaystable}  
+
+\section{Composition of mothers}
+
+We further analyze the composition of birth mothers and mothers  after introducing the reform. 
+
+
+ \begin{figure}[H] \caption{Trends in composition of mothers} \centering
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_PrimaryIncomplete}}
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_PrimaryComplete}}\\
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_SecondaryComplete}}
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_PreparatoryComplete}}\\
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_ProfessionalEduc}}
+ 	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_singleMother}}\\
+ \end{figure}
+ 
+  \begin{figure}[H] \caption{Trends in composition of deceased mothers} \centering
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_NoSchool}}
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_Primary}}\\
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_Secondary}}
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_HighSch}}\\
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_single}}
+  	\subfloat[]{\includegraphics[width = 3in]{C:/Users/xmuhha/Dropbox/Mexico/output/graphs/Trend_unEmployment}}\\
+  \end{figure}
+  
+ \begin{sidewaystable}\centering    
+ 	\caption{Composition of birth mothers, education} 
+ 	\begin{threeparttable}    
+ 		\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/education.tex} 
+ 		\begin{tablenotes}
+ 			\small
+ 			The table displays the difference in difference estimates from OLS regressions. The sample includes all birth mothers aged 15-44 for the period 2002-2011. The dependent variables is defined as the proportion of . The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+ 		\end{tablenotes}
+ 	\end{threeparttable}    
+ \end{sidewaystable}  
+
+  \begin{sidewaystable}\centering    
+  	\caption{Composition of deseased mothers, education} 
+  	\begin{threeparttable}    
+  		\input{C:/Users/xmuhha/Dropbox/Mexico/output/regression/educationMMR.tex} 
+  		\begin{tablenotes}
+  			\small
+  			The table displays the difference in difference estimates from OLS regressions. The sample includes all birth mothers aged 15-44 for the period 2002-2011. The dependent variables is defined as the proportion of . The independent variable \textit{Reform} takes the value of one in locations and time where the reform was passed i.e. in the Federal District after 2007. The independent variable \textit{ReformClose} is a binary variable equal to one, post 2007, in the state of Mexico which is the surrounding district of the Federal District. State specific time trends are included. Standard errors are clustered at state level.*** p<0.01,** p<0.05,* p<0.1
+  		\end{tablenotes}
+  	\end{threeparttable}    
+  \end{sidewaystable} 
+  
+  
+  \begin{figure}[H]  \caption{}\label{map}
+  	\includegraphics[width=1.2\textwidth]{C:/Users/xmuhha/Dropbox/Mexico/output/map/mexicoMap.pdf}
+  	
+  \end{figure}
+ % % % % % % % % % % % % % % % % % % % % % % % % % % %
+ % % % % References % % % % % % % % % % % % % % % % % 
+ % % % % % % % % % % % % % % % % % % % % % % % % % % %
+  
+  \newpage
+  \singlespacing
+  \bibliographystyle{agsm}
+  \bibliography{bibfile}
+  
+  
+  
+  
+ 
+  
+
+\end{document}
