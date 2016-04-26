@@ -1,0 +1,16 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{7}{c}}
+\hline\hline
+                    &\multicolumn{7}{c}{\textbf{Maternal Composition}}                                                              \\\cmidrule(lr){2-8}
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}&\multicolumn{1}{c}{(7)}\\
+                    &\multicolumn{1}{c}{\shortstack{OLS\\Teen Birth}}&\multicolumn{1}{c}{\shortstack{OLS\\1st Child}}&\multicolumn{1}{c}{\shortstack{OLS\\2nd Child}}&\multicolumn{1}{c}{\shortstack{OLS\\3rd Child}}&\multicolumn{1}{c}{\shortstack{OLS\\Age 1st Child}}&\multicolumn{1}{c}{\shortstack{OLS\\Age 2st Child}}&\multicolumn{1}{c}{\shortstack{OLS\\Age 3st Child}}\\
+\hline
+Reform              &    -0.00986***&      0.0220** &    -0.00251   &     -0.0109***&      0.0828   &       0.125***&      0.0437   \\
+                    &     (0.002)   &     (0.010)   &     (0.006)   &     (0.003)   &     (0.084)   &     (0.040)   &     (0.048)   \\
+\hline
+Observations        &     1157301   &     1157301   &     1157301   &     1157301   &      491307   &      320960   &      345034   \\
+\(R^{2}\)           &     0.00203   &     0.01077   &     0.00327   &     0.00203   &     0.01850   &     0.01328   &     0.00540   \\
+Mean\_of\_dep\_Var     &       0.175   &       0.425   &       0.277   &       0.165   &       22.94   &       25.56   &       29.64   \\
+\hline FEs, Trends and Controls& \checkmark &\checkmark&\checkmark& \checkmark&\checkmark&\checkmark&\checkmark \\\bottomrule \bottomrule
+\end{tabular}}

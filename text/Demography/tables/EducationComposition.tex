@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{c}}
+\hline\hline
+                    &\multicolumn{5}{c}{\textbf{Maternal Composition, Education}}                   \\\cmidrule(lr){2-6}
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}\\
+                    &\multicolumn{1}{c}{\shortstack{OLS\\No \\Education}}&\multicolumn{1}{c}{\shortstack{OLS\\Primary \\Education}}&\multicolumn{1}{c}{\shortstack{OLS\\Secondary \\Education}}&\multicolumn{1}{c}{\shortstack{OLS\\High \\School}}&\multicolumn{1}{c}{\shortstack{OLS\\Professional\\ Education}}\\
+\hline
+Reform              &    -0.00235   &     0.00417   &      0.0191***&     -0.0136***&    -0.00701***\\
+                    &     (0.002)   &     (0.003)   &     (0.003)   &     (0.003)   &     (0.002)   \\
+\hline
+Observations        &     1081393   &     1081393   &     1081393   &     1081393   &     1081393   \\
+\(R^{2}\)           &     0.10147   &     0.03111   &     0.05042   &     0.02922   &     0.05671   \\
+Mean\_of\_dep\_Var     &       0.120   &       0.242   &       0.360   &       0.176   &       0.101   \\
+\hline State and Year & \checkmark &\checkmark&\checkmark& \checkmark&\checkmark  \\
+State Specific Linear Trends&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark  \\ 
+Economic controls&\checkmark&\checkmark &\checkmark&\checkmark&\checkmark \\
+Health controls&\checkmark&\checkmark &\checkmark&\checkmark&\checkmark  \\ \bottomrule \bottomrule
+\end{tabular}}

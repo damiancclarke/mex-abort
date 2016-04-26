@@ -1,0 +1,24 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{10}{c}}
+\hline\hline
+                    &\multicolumn{5}{c}{\textbf{Full-Sample 15-44}}                                 &\multicolumn{5}{c}{\textbf{Teenage women 15-19}}                               \\\cmidrule(lr){2-6}\cmidrule(lr){7-11}
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}&\multicolumn{1}{c}{(7)}&\multicolumn{1}{c}{(8)}&\multicolumn{1}{c}{(9)}&\multicolumn{1}{c}{(10)}\\
+                    &\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\Num. \\Maternal \\Deaths}}\\
+\hline
+
+PartiallyMMR        &      0.0947*  &      0.0744   &      0.0562   &      0.0608   &      0.0634   &       0.306*  &       0.230   &       0.229   &       0.211   &       0.212   \\
+                    &     (0.052)   &     (0.066)   &     (0.065)   &     (0.064)   &     (0.066)   &     (0.179)   &     (0.172)   &     (0.176)   &     (0.174)   &     (0.175)   \\
+[1em]
+FullyMMR            &     -0.0414   &     -0.0728   &      -0.102** &     -0.0776*  &     -0.0809*  &     -0.0966   &      -0.212** &      -0.231** &      -0.331** &      -0.312*  \\
+                    &     (0.026)   &     (0.049)   &     (0.048)   &     (0.046)   &     (0.045)   &     (0.061)   &     (0.089)   &     (0.100)   &     (0.147)   &     (0.169)   \\
+\hline
+Pseudo \(R^{2}\)    &     0.13641   &     0.13712   &     0.13725   &     0.13726   &     0.13726   &     0.14010   &     0.14307   &     0.14309   &     0.14325   &     0.14365   \\
+Mean\_of\_dep\_Var     &       0.103   &       0.103   &       0.103   &       0.103   &       0.103   &      0.0785   &      0.0785   &      0.0785   &      0.0785   &      0.0785   \\
+Observations (State*Year*Age) & 115146&115146& 115146&115146&115146&19259&19259&19259&19259&19259\\
+\hline State, Year and Age FE& \checkmark &\checkmark&\checkmark& \checkmark&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark\\
+State Specific Linear Trends&&\checkmark&\checkmark&\checkmark&\checkmark&& \checkmark&\checkmark&\checkmark&\checkmark\\
+Economic controls&& &\checkmark& \checkmark&\checkmark&&&\checkmark&\checkmark&\checkmark\\
+Education controls&&&& \checkmark&\checkmark&&&&\checkmark&\checkmark\\
+Health controls&&&&& \checkmark&&&&&\checkmark\\\bottomrule\bottomrule
+\end{tabular}}

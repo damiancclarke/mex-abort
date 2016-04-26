@@ -1,0 +1,27 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{10}{c}}
+\hline\hline
+                    &\multicolumn{5}{c}{\textbf{Fertility}}                                         &\multicolumn{5}{c}{\textbf{Maternal Mortality}}                                \\\cmidrule(lr){2-6}\cmidrule(lr){7-11}
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}&\multicolumn{1}{c}{(7)}&\multicolumn{1}{c}{(8)}&\multicolumn{1}{c}{(9)}&\multicolumn{1}{c}{(10)}\\
+                    &\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log \\Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log \\Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\ Num. of \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\ Num. of \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\ Num. of \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\ Num. of \\Deaths}}&\multicolumn{1}{c}{\shortstack{Poisson\\\\ Num. of \\Deaths}}\\
+\hline
+main                &               &               &               &               &               &               &               &               &               &               \\
+Reform              &     -0.0283** &     -0.0261***&     -0.0308***&     -0.0331***&     -0.0330***&      -0.148***&      -0.217***&      -0.250***&      -0.278***&      -0.267***\\
+                    &     (0.012)   &     (0.006)   &     (0.006)   &     (0.009)   &     (0.009)   &     (0.019)   &     (0.057)   &     (0.047)   &     (0.060)   &     (0.052)   \\
+[1em]
+ReformClose         &     -0.0149   &     0.00748   &     0.00536   &      0.0112   &      0.0129   &      -0.132***&     -0.0168   &      0.0176   &      0.0331   &      0.0632   \\
+                    &     (0.012)   &     (0.006)   &     (0.006)   &     (0.013)   &     (0.016)   &     (0.019)   &     (0.057)   &     (0.058)   &     (0.071)   &     (0.071)   \\
+\hline
+\(R^{2}\)           &       0.990   &       0.990   &       0.990   &       0.990   &       0.990   &               &               &               &               &               \\
+Pseudo \(R^{2}\)    &               &               &               &               &               &       0.371   &       0.372   &       0.372   &       0.372   &       0.372   \\
+Mean\_of\_dep\_Var     &       7.888   &       7.888   &       7.888   &       7.888   &       7.888   &       2.823   &       2.823   &       2.823   &       2.823   &       2.823   \\
+Observations (State*Year*Age) & 6300&6300&6300&6300&6300&6300&6300&6300&6300&6300\\
+Number of women & 193099050&193099050&193099050&193099050&193099050&&&&&\\
+Number of births &&&&&& 15763586&15763586&15763586&15763586&15763586\\
+\hline State, Year and Age FE& \checkmark &\checkmark&\checkmark& \checkmark&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark\\
+State Specific Linear Trends&&\checkmark&\checkmark&\checkmark&\checkmark&& \checkmark&\checkmark&\checkmark& \checkmark\\ 
+Economic controls&& &\checkmark&\checkmark&\checkmark&& &\checkmark&\checkmark& \checkmark\\  
+Education controls&& & &\checkmark&\checkmark&& & &\checkmark& \checkmark\\ 
+Health controls&& &&&\checkmark&& &&& \checkmark\\ \bottomrule \bottomrule
+\end{tabular}}

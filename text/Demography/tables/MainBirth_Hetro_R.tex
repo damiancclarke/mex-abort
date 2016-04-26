@@ -1,0 +1,22 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{6}{c}}
+\hline\hline
+                    &\multicolumn{1}{c}{\textbf{Ages 15-18}}&\multicolumn{1}{c}{\textbf{Ages 19-24}}&\multicolumn{1}{c}{\textbf{Ages 25-29}}&\multicolumn{1}{c}{\textbf{Ages 30-24}}&\multicolumn{1}{c}{\textbf{Ages 35-39}}&\multicolumn{1}{c}{\textbf{Ages 40-44}}\\\cmidrule(lr){2-2}\cmidrule(lr){3-3}\cmidrule(lr){4-4}\cmidrule(lr){5-5}\cmidrule(lr){6-6}\cmidrule(lr){7-7}
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}\\
+                    &\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}&\multicolumn{1}{c}{\shortstack{OLS\\Log\\ Num. of \\Births}}\\
+\hline
+&&&&&&\\
+Reform              &     -0.0872***&     -0.0124   &      0.0107   &     -0.0622***&     -0.0472***&     -0.0358** \\
+                    &     (0.011)   &     (0.009)   &     (0.008)   &     (0.011)   &     (0.011)   &     (0.014)   \\
+[1em]
+ReformClose         &    -0.00861   &     0.00693   &      0.0128   &     0.00402   &     -0.0248** &      0.0282   \\
+                    &     (0.013)   &     (0.014)   &     (0.012)   &     (0.015)   &     (0.010)   &     (0.020)   \\
+\hline
+\(R^{2}\)           &       0.994   &       0.998   &       0.998   &       0.997   &       0.994   &       0.987   \\
+Mean\_of\_dep\_Var     &       7.753   &       8.644   &       8.495   &       8.091   &       7.292   &       5.731   \\
+Observations (State*Year*Age) &1280 &1920&1600& 1600&1600&1600\\
+Number of women &43106477 &60894528&47542195& 44176996&39516001&33952996\\
+\hline FEs, Trends and Controls & \checkmark &\checkmark&\checkmark& \checkmark&\checkmark&\checkmark\\
+ \bottomrule \bottomrule
+\end{tabular}}
