@@ -91,9 +91,9 @@ foreach num of numlist 0(1)8 {
 }
 
 local Treat 	 Reform ReformClose regressive
-local FE 	 i.year i.stateNum i.age
+local FE    	 i.year i.stateNum i.age
 local StateTrend i.stateNum#c.year   
-local clus 	 stateNum
+local clus 	     stateNum
 local CoVar1 	 deseasonUnemployment totalIncome rural
 local CoVar2 	 noRead noSchool
 local CoVar3 	 noHealth seguroPopular
@@ -187,6 +187,78 @@ postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
 #delimit cr
 estimates clear
 
+
+********************************************************************************	
+*** (1b) log(births) with wild bootstrapping
+********************************************************************************
+local pwt  [aw=population]
+local cse  
+tab year    , gen(_year)
+tab stateNum, gen(_snum)
+tab age     , gen(_age)
+foreach num of numlist 1(1)32 {
+    gen _Tsnum`num' = _snum`num'*year
+}
+local FE    	 _year* _snum* _age*
+local StateTrend _Tsnum*
+
+estimates clear
+foreach num of numlist 1 2 3 {
+    #delimit ;
+    eststo: clustse regress Reform ReformClose regressive ln_birth _year*
+    _snum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
+    #delimit cr
+    mat def Allboot = e(bootresults)
+    mat def Refboot = Allboot[201...,4]
+    mat def Ests    = e(b)
+    svmat Refboot
+    sort Refboot1
+    mkmat Refboot1, nomissing
+    local lb = string(Refboot1[5,1], "%5.3f")
+    local ub = string(Refboot1[195,1], "%5.3f")
+    local ci = "[`lb',`ub']"
+    local bt = Ests[1,1]
+    estadd local ci95 = "`ci'"
+}
+/*
+local cn if age<20
+foreach num of numlist 1(1)5 {
+    eststo: clustse regress ln_birth `Treat' `con`num'' `cn', `cse'
+    mat def Allboot = e(bootresults)
+    mat def Refboot = Allboot[201...,4]
+    svmat Refboot
+    sort Refboot1
+    mkmat Refboot1, nomissing
+    local lb = string(Refboot1[5,1], "%5.3f")
+    local ub = string(Refboot1[195,1], "%5.3f")
+    estadd local 95ci = "[`lb',`ub']"
+}
+*/
+lab var regressive "Regressive Law Change"
+lab var Reform     "ILE Reform"
+lab var ln_birth   "ln(Birth)"
+
+#delimit ;
+esttab est1 using "$REG/Births-wild.tex",
+replace cells(b(fmt(%-9.3f)) ci95(par([ ]) )) stats
+(N, fmt(%9.0g) label(Observations)) collabels(none) label keep(Reform)
+mgroups("All Women" "Teen-aged Women", pattern(1 0 0 1 0 0)
+        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
+title("Replicating Fertility Results with Wild Cluster Bootstrapping")
+postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
+         "State Linear Trends   &   & Y & Y &   & Y & Y \\             "
+         "Time-Varying Controls &   &   & Y &   &   & Y \\             "
+         "\bottomrule\multicolumn{7}{p{14.8cm}}{\begin{footnotesize}   "
+         " Difference-in-difference estimates of the reform on rates   "
+         " of births are displayed.  Standard errors clustered by      "
+         "state are presented in parentheses.  All regressions are     "
+         "weighted by population of women of the relevant age group    "
+         "in each state and year. ***p-value$<$0.01, **p-value$<$0.05, "
+         "*p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+exit
 
 ********************************************************************************	
 *** (2) Entropy weighting
