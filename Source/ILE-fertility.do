@@ -202,62 +202,114 @@ foreach num of numlist 1(1)32 {
 local FE    	 _year* _snum* _age*
 local StateTrend _Tsnum*
 
-estimates clear
 foreach num of numlist 1 2 3 {
-    #delimit ;
-    eststo: clustse regress Reform ReformClose regressive ln_birth _year*
-    _snum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
-    #delimit cr
-    mat def Allboot = e(bootresults)
-    mat def Refboot = Allboot[201...,4]
-    mat def Ests    = e(b)
-    svmat Refboot
-    sort Refboot1
-    mkmat Refboot1, nomissing
-    local lb = string(Refboot1[5,1], "%5.3f")
-    local ub = string(Refboot1[195,1], "%5.3f")
-    local ci = "[`lb',`ub']"
-    local bt = Ests[1,1]
-    estadd local ci95 = "`ci'"
+    if `num'==1 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
+       #delimit cr
+    }
+    if `num'==2 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _Tsnum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
+       #delimit cr
+    }
+    if `num'==3 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _Tsnum* _age* deseasonUnemployment totalIncome rural noRead
+        noSchool noHealth seguroPopular, cluster(stateNum) method(wild)
+        reps(200) seed(272);
+       #delimit cr
+    }
+    foreach v of numlist 1 3 {
+        local nB = `v'+3
+        mat def Allboot = e(bootresults)
+        mat def Refboot = Allboot[201...,`nB']
+        mat def Ests    = e(b)
+        svmat Refboot
+        sort Refboot1
+        mkmat Refboot1, nomissing
+        drop Refboot1
+        local lb = string(Refboot1[5,1], "%5.3f")
+        local ub = string(Refboot1[195,1], "%5.3f")
+        local ci`num'A`v' = "[`lb',`ub']"
+        local b`num'A`v' = string(Ests[1,`v'], "%5.3f")
+        if `lb'>0&`ub'>0 local b`num'A`v' = "`b`num'A`v''$^{\ddagger} $"
+        if `lb'<0&`ub'<0 local b`num'A`v' = "`b`num'A`v''$^{\ddagger} $"        
+    }
 }
-/*
-local cn if age<20
-foreach num of numlist 1(1)5 {
-    eststo: clustse regress ln_birth `Treat' `con`num'' `cn', `cse'
-    mat def Allboot = e(bootresults)
-    mat def Refboot = Allboot[201...,4]
-    svmat Refboot
-    sort Refboot1
-    mkmat Refboot1, nomissing
-    local lb = string(Refboot1[5,1], "%5.3f")
-    local ub = string(Refboot1[195,1], "%5.3f")
-    estadd local 95ci = "[`lb',`ub']"
-}
-*/
-lab var regressive "Regressive Law Change"
-lab var Reform     "ILE Reform"
-lab var ln_birth   "ln(Birth)"
 
+preserve
+keep if age<20
+foreach num of numlist 1 2 3 {    
+    if `num'==1 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
+       #delimit cr
+    }
+    if `num'==2 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _Tsnum* _age*, cluster(stateNum) method(wild) reps(200) seed(272);
+       #delimit cr
+    }
+    if `num'==3 {
+        #delimit ;
+        clustse regress ln_birth Reform ReformClose regressive _year*
+        _snum* _Tsnum* _age* deseasonUnemployment totalIncome rural noRead
+        noSchool noHealth seguroPopular, cluster(stateNum) method(wild)
+        reps(200) seed(272);
+       #delimit cr
+    }
+    foreach v of numlist 1 3 {
+        local nB = `v'+3
+        mat def Allboot = e(bootresults)
+        mat def Refboot = Allboot[201...,`nB']
+        mat def Ests    = e(b)
+        svmat Refboot
+        sort Refboot1
+        mkmat Refboot1, nomissing
+        drop Refboot1
+        local lb = string(Refboot1[5,1], "%5.3f")
+        local ub = string(Refboot1[195,1], "%5.3f")
+        local ci`num'Y`v' = "[`lb',`ub']"
+        local b`num'Y`v' = string(Ests[1,`v'], "%5.3f")
+        if `lb'>0&`ub'>0 local b`num'Y`v' = "`b`num'Y`v''$^{\ddagger} $"
+        if `lb'<0&`ub'<0 local b`num'Y`v' = "`b`num'Y`v''$^{\ddagger} $"        
+    }
+}
+file open results using "$REG/Births-wild.tex", write replace
 #delimit ;
-esttab est1 using "$REG/Births-wild.tex",
-replace cells(b(fmt(%-9.3f)) ci95(par([ ]) )) stats
-(N, fmt(%9.0g) label(Observations)) collabels(none) label keep(Reform)
-mgroups("All Women" "Teen-aged Women", pattern(1 0 0 1 0 0)
-        prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("Replicating Fertility Results with Wild Cluster Bootstrapping")
-postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
-         "State Linear Trends   &   & Y & Y &   & Y & Y \\             "
-         "Time-Varying Controls &   &   & Y &   &   & Y \\             "
-         "\bottomrule\multicolumn{7}{p{14.8cm}}{\begin{footnotesize}   "
-         " Difference-in-difference estimates of the reform on rates   "
-         " of births are displayed.  Standard errors clustered by      "
-         "state are presented in parentheses.  All regressions are     "
-         "weighted by population of women of the relevant age group    "
-         "in each state and year. ***p-value$<$0.01, **p-value$<$0.05, "
-         "*p-value$<$0.01."
-         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+file write results "\begin{table}[htbp]\centering 
+\caption{Replicating Fertility Results with Wild Cluster Bootstrapping} 
+\begin{tabular}{l*{6}{c}}  \toprule
+&\multicolumn{3}{c}{All Women}&\multicolumn{3}{c}{Teen-aged Women} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7} 
+&(1)&(2)&(3)&(4)&(5)&(6) \\ 
+&ln(Birth)&ln(Birth)&ln(Birth)&ln(Birth)&ln(Birth)&ln(Birth) \\ 
+\midrule  ILE Reform &`b1A1'&`b2A1'&`b3A1'&`b1Y1'&`b2Y1'&`b3Y1'\\ 
+&`ci1A1'&`ci2A1'&`ci3A1'&`ci1Y1'&`ci2Y1'&`ci3Y1'\\ 
+Regressive Law Change&`b1A3'&`b2A3'&`b3A3'&`b1Y3'&`b2Y3'&`b3Y3'\\ 
+&`ci1A3'&`ci2A3'&`ci3A3'&`ci1Y3'&`ci2Y3'&`ci3Y3'\\ 
+\midrule  Observations & 9600& 9600& 9600& 1600& 1600& 1600\\ 
+State and Year FEs    & Y & Y & Y & Y & Y & Y \\ 
+State Linear Trends   &   & Y & Y &   & Y & Y \\ 
+Time-Varying Controls &   &   & Y &   &   & Y \\ 
+\bottomrule
+\multicolumn{7}{p{18cm}}{\begin{footnotesize} Results replicate unweighted
+difference-in-difference estimates of the effect of reforms on rates of
+birth, however now using wild bootstrapped standard errors in place of
+analytical standard errors clustered at the level of the state.  Point
+estimates are presented, along with 95\% confidence intervals of these
+estimates in parentheses.  $^\ddagger $ Significant at the 95\% level.
+\end{footnotesize}}
+\end{tabular}\end{table}";
 #delimit cr
-estimates clear
+file close results
+restore
 exit
 
 ********************************************************************************	
@@ -493,39 +545,3 @@ graph export "$GRA/birthEvent.eps", replace as(eps);
 log close
 dis _newline(3) "Exiting without error" _newline(3)
 
-exit
-
-
-
-********************************************************************************	
-*** (X) Old permutation tests
-********************************************************************************
-gen tResults1 = .
-gen bResults1 = .
-gen tResults2 = .
-gen bResults2 = .
-gen sResults  = .
-drop if stateNum==15
-local vars `StateTrend' `CoVar1' `CoVar2' `CoVar3'
-foreach num of numlist 1(1)14 16(1)32 {
-    qui gen treatPermut = stateNum==`num'&year>=2008
-    qui reg ln_birth  `FE' `vars' treatPermut  [pw=entropyWt], vce(cluster `clus')
-    qui replace tResults2=_b[treatPermut]/_se[treatPermut] in `num'
-    qui replace bResults2=_b[treatPermut] in `num'
-    tab stateName if stateNum==`num'
-
-    qui reg ln_birth  `FE' `vars' treatPermut  [fw=population], vce(cluster `clus')
-    qui replace tResults1=_b[treatPermut]/_se[treatPermut] in `num'
-    qui replace bResults1=_b[treatPermut] in `num'
-    qui replace sResults = `num' in `num'
-    drop treatPermut
-    list tResults1 in `num'
-}
-twoway hist tResults2 if sResults!=9, bin(15) xline(-2.576 2.576, lcolor(red)) ///
-    scheme(s1mono) || hist tResults2 if sResults==9, bcolor(blue)
-graph export "$GRA/permutationTest.eps", as(eps) replace
-	
-	
-	
-	
-	
