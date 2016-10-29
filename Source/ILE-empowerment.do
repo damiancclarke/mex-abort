@@ -95,6 +95,12 @@ foreach 	 s_num in 10 11 14 16 20 21 22 23 26 28 31{
 replace 	 pregressive = 0 if pregressive!=1
 
 
+#delimit ;
+keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose weight
+  EducLevel Indigenous edad hh_id placeboReform placeboReformClose pregressive;
+#delimit cr
+egen Nmiss = rowmiss(HH_bargDep5 HH_bargDep6 HH_bargDep7 HH_bargDep10 HH_bargDep12)
+keep if Nmiss==0
 
 *------------------------------------------------------------------------------*
 *---- Romano Wolf (full Sample)
@@ -106,18 +112,12 @@ local wt    [pw=weight]
 local cnd   if Nmiss==0&edad>14&edad<45
 local se    absorb(hh_id) robust
 
-keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose  /*
-*/ EducLevel Indigenous weight edad hh_id
-
-egen Nmiss = rowmiss(HH_bargDep5 HH_bargDep6 HH_bargDep7 HH_bargDep10 HH_bargDep12)
-keep if Nmiss==0
-
 set seed 82130
 local Nreps 150
 
-
 **RUN REGRESSIONS AND BOOTSTRAP SAMPLE
 foreach num of numlist 5 6 7 10 12 {
+    dis "Estimation and bootstrapping with variable `num'"
     qui eststo: areg HH_bargDep`num' `CoVar' `FE' `Treat' `wt' `cnd', `se'
     foreach ivar of varlist Reform Regressive {
         if `"`ivar'"'=="Reform" local a a
@@ -129,7 +129,7 @@ foreach num of numlist 5 6 7 10 12 {
         local n`num'`a' = e(N)
     }
     local r`num' = string(e(r2),"%5.3f")
-    sum HH_bargDep`num'
+    sum HH_bargDep`num' `cnd'
     local m`num' = string(r(mean),"%5.3f")
     
     qui gen b_Reps`num'a = .
@@ -193,6 +193,10 @@ foreach ivar of varlist Reform Regressive {
         local p`maxv'`a'   = string(ttail(`n`maxv'`a'',`maxt')*2,"%5.3f")
         local prm`maxv'`a' = string(`pval',"%5.3f")
         local ph`maxv'`a'  = ttail(`n`maxv'`a'',`maxt')*2*length("`cand'")
+
+        if `pval'<0.01      local b`maxv'`a' = "`b`maxv'`a''***"
+        else if `pval'<0.05 local b`maxv'`a' = "`b`maxv'`a''**"
+        else if `pval'<0.1  local b`maxv'`a' = "`b`maxv'`a''*"
         
         dis "Original p-value is `p`maxv'`a''" 
         dis "Romano Wolf p-value is `prm`maxv'`a''"
@@ -224,16 +228,22 @@ foreach ivar of varlist Reform Regressive {
     local sInd`a' = string(_se[`ivar'],"%5.3f")
     local tInd`a' = _b[`ivar']/_se[`ivar']
     local nInd`a' = e(N)
-    local pInd`a' = string(ttail(`nInd`a'',`tInd`a'')*2,"%5.3f")
+    local pInd`a' = string(ttail(`nInd`a'',abs(`tInd`a''))*2,"%5.3f")
+    local pval = ttail(`nInd`a'',abs(`tInd`a''))*2
+    
+    if `pval'<0.01      local bInd`a' = "`bInd`a''***"
+    else if `pval'<0.05 local bInd`a' = "`bInd`a''**"
+    else if `pval'<0.1  local bInd`a' = "`bInd`a''*"
 }
 local rInd = string(e(r2),"%5.3f")
-sum hh_index
+sum hh_index `cnd'
 local mInd = string(r(mean),"%5.3f")
 
+local lc "\label{tab:empower}"
 file open results using "$REG/Empowerment-Main.tex", write replace
 #delimit ;
 file write results "\begin{table}[htbp]\centering
-\caption{The Effect of the Abortion Reform on Women's Empowerment in the Household}
+\caption{The Effect of the Abortion Reform on Women's Empowerment in the Household`lc'}
 \begin{tabular}{l*{6}{c}}  \toprule
 &\multicolumn{5}{c}{Individual Elements}&Index  \\ \cmidrule(lr){2-6}
 &(1)&(2)&(3)&(4)&(5)&(6) \\
@@ -255,12 +265,19 @@ house-hold fixed effects, year fixed effects and time-varying controls.  In
 order to correct for Family Wise Error Rates from multiple hypothesis testing,
 we calculate \citet{RomanoWolf2005} p-values, using their Stepdown methods.
 Romano-Wolf p-values are presented in square brackets, and traditional
-(uncorrected) p-values are presented in round brackets.
+(uncorrected) p-values are presented in round brackets. Significance stars
+refer to significance at 10\% (*), 5\% (**) or 1\% (***) levels, and are
+based on Romano-Wolf p-values.
 \end{footnotesize}}
 \end{tabular}\end{table}";
 #delimit cr
 file close results
 
+#delimit ;
+keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose weight
+  EducLevel Indigenous edad hh_id placeboReform placeboReformClose pregressive
+  Nmiss;
+#delimit cr
 
 *------------------------------------------------------------------------------*
 *---- Romano Wolf (Placebo test using older women)
@@ -272,19 +289,13 @@ local wt    [pw=weight]
 local cnd   if Nmiss==0&edad>44
 local se    absorb(hh_id) robust
 
-keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose  /*
-*/ EducLevel Indigenous weight edad hh_id
-
-egen Nmiss = rowmiss(HH_bargDep5 HH_bargDep6 HH_bargDep7 HH_bargDep10 HH_bargDep12)
-keep if Nmiss==0
-
 set seed 82130
 local Nreps 150
 
 
-
 **RUN REGRESSIONS AND BOOTSTRAP SAMPLE
 foreach num of numlist 5 6 7 10 12 {
+    dis "Estimation and bootstrapping with variable `num'"
     qui eststo: areg HH_bargDep`num' `CoVar' `FE' `Treat' `wt' `cnd', `se'
     foreach ivar of varlist Reform Regressive {
         if `"`ivar'"'=="Reform" local a a
@@ -296,7 +307,7 @@ foreach num of numlist 5 6 7 10 12 {
         local n`num'`a' = e(N)
     }
     local r`num' = string(e(r2),"%5.3f")
-    sum HH_bargDep`num'
+    qui sum HH_bargDep`num' `cnd'
     local m`num' = string(r(mean),"%5.3f")
     
     qui gen b_Reps`num'a = .
@@ -364,6 +375,9 @@ foreach ivar of varlist Reform Regressive {
         dis "Original p-value is `p`maxv'`a''" 
         dis "Romano Wolf p-value is `prm`maxv'`a''"
         dis "Holm p-value is `ph`maxv'`a''" 
+        if `pval'<0.01      local b`maxv'`a' = "`b`maxv'`a''***"
+        else if `pval'<0.05 local b`maxv'`a' = "`b`maxv'`a''**"
+        else if `pval'<0.1  local b`maxv'`a' = "`b`maxv'`a''*"
         
         drop empiricalDist
         local rank `rank' `maxv'
@@ -391,16 +405,21 @@ foreach ivar of varlist Reform Regressive {
     local sInd`a' = string(_se[`ivar'],"%5.3f")
     local tInd`a' = _b[`ivar']/_se[`ivar']
     local nInd`a' = e(N)
-    local pInd`a' = string(ttail(`nInd`a'',`tInd`a'')*2,"%5.3f")
+    local pInd`a' = string(ttail(`nInd`a'',abs(`tInd`a''))*2,"%5.3f")
+    local pval = ttail(`nInd`a'',abs(`tInd`a''))*2
+    
+    if `pval'<0.01      local bInd`a' = "`bInd`a''***"
+    else if `pval'<0.05 local bInd`a' = "`bInd`a''**"
+    else if `pval'<0.1  local bInd`a' = "`bInd`a''*"
 }
 local rInd = string(e(r2),"%5.3f")
-sum hh_index
+sum hh_index `cnd'
 local mInd = string(r(mean),"%5.3f")
 
 file open results using "$REG/Empowerment-45plus.tex", write replace
 #delimit ;
 file write results "\begin{table}[htbp]\centering
-\caption{Placebo Test of the Effect of the Reform on Women's Empowerment (Women Aged 45+}
+\caption{Placebo Test of the Effect of the Reform on Women's Empowerment (Women Aged 45+)}
 \begin{tabular}{l*{6}{c}}  \toprule
 &\multicolumn{5}{c}{Individual Elements}&Index  \\ \cmidrule(lr){2-6}
 &(1)&(2)&(3)&(4)&(5)&(6) \\
@@ -416,17 +435,19 @@ Regressive Law Change &`b5b'&`b6b'&`b7b'&`b10b'&`b12b'&`bIndb'\\
 R-Squared &`r5'&`r6'&`r7'&`r10'&`r12'&`rInd'\\
 Mean of Dep Var &`m5'&`m6'&`m7'&`m10'&`m12'&`mInd'\\
 \bottomrule
-\multicolumn{7}{p{16cm}}{\begin{footnotesize} Each column presents a seperate
-regression of an empowerment variable or the empowerment index including
-house-hold fixed effects, year fixed effects and time-varying controls.  In
-order to correct for Family Wise Error Rates from multiple hypothesis testing,
-we calculate \citet{RomanoWolf} p-values, using their Stepdown methods. Romano
-Wolf p-values are presented in square brackets, and traditional (uncorrected)
-p-values are presented in round brackets.
+\multicolumn{7}{p{16cm}}{\begin{footnotesize} For full notes refer to table
+\ref{tab:empower}.  Regression results presented here are estimated as in
+table \ref{tab:empower}, however now the sample consists of married women
+\emph{above} fertile age (45 years and above).
 \end{footnotesize}}
 \end{tabular}\end{table}";
 #delimit cr
 file close results
+#delimit ;
+keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose weight
+  EducLevel Indigenous edad hh_id placeboReform placeboReformClose pregressive
+  Nmiss;
+#delimit cr
 
 
 *------------------------------------------------------------------------------*
@@ -446,11 +467,6 @@ local wt    [pw=weight]
 local cnd   if Nmiss==0&edad>44
 local se    absorb(hh_id) robust
 
-keep HH_barg* hh_index Reform Regressive round stateNum age ReformClose  /*
-*/ EducLevel Indigenous weight edad hh_id
-
-egen Nmiss = rowmiss(HH_bargDep5 HH_bargDep6 HH_bargDep7 HH_bargDep10 HH_bargDep12)
-keep if Nmiss==0
 
 set seed 82130
 local Nreps 150
@@ -459,6 +475,7 @@ local Nreps 150
 
 **RUN REGRESSIONS AND BOOTSTRAP SAMPLE
 foreach num of numlist 5 6 7 10 12 {
+    dis "Estimation and bootstrapping with variable `num'"
     qui eststo: areg HH_bargDep`num' `CoVar' `FE' `Treat' `wt' `cnd', `se'
     foreach ivar of varlist Reform Regressive {
         if `"`ivar'"'=="Reform" local a a
@@ -470,7 +487,7 @@ foreach num of numlist 5 6 7 10 12 {
         local n`num'`a' = e(N)
     }
     local r`num' = string(e(r2),"%5.3f")
-    sum HH_bargDep`num'
+    qui sum HH_bargDep`num' `cnd'
     local m`num' = string(r(mean),"%5.3f")
     
     qui gen b_Reps`num'a = .
@@ -538,6 +555,9 @@ foreach ivar of varlist Reform Regressive {
         dis "Original p-value is `p`maxv'`a''" 
         dis "Romano Wolf p-value is `prm`maxv'`a''"
         dis "Holm p-value is `ph`maxv'`a''" 
+        if `pval'<0.01      local b`maxv'`a' = "`b`maxv'`a''***"
+        else if `pval'<0.05 local b`maxv'`a' = "`b`maxv'`a''**"
+        else if `pval'<0.1  local b`maxv'`a' = "`b`maxv'`a''*"
         
         drop empiricalDist
         local rank `rank' `maxv'
@@ -565,10 +585,15 @@ foreach ivar of varlist Reform Regressive {
     local sInd`a' = string(_se[`ivar'],"%5.3f")
     local tInd`a' = _b[`ivar']/_se[`ivar']
     local nInd`a' = e(N)
-    local pInd`a' = string(ttail(`nInd`a'',`tInd`a'')*2,"%5.3f")
+    local pInd`a' = string(ttail(`nInd`a'',abs(`tInd`a''))*2,"%5.3f")
+    local pval = ttail(`nInd`a'',abs(`tInd`a''))*2
+    
+    if `pval'<0.01      local bInd`a' = "`bInd`a''***"
+    else if `pval'<0.05 local bInd`a' = "`bInd`a''**"
+    else if `pval'<0.1  local bInd`a' = "`bInd`a''*"
 }
 local rInd = string(e(r2),"%5.3f")
-sum hh_index
+sum hh_index `cnd'
 local mInd = string(r(mean),"%5.3f")
 
 file open results using "$REG/Empowerment-preReform.tex", write replace
@@ -590,13 +615,12 @@ Regressive Law Change &`b5b'&`b6b'&`b7b'&`b10b'&`b12b'&`bIndb'\\
 R-Squared &`r5'&`r6'&`r7'&`r10'&`r12'&`rInd'\\
 Mean of Dep Var &`m5'&`m6'&`m7'&`m10'&`m12'&`mInd'\\
 \bottomrule
-\multicolumn{7}{p{16cm}}{\begin{footnotesize} Each column presents a seperate
-regression of an empowerment variable or the empowerment index including
-house-hold fixed effects, year fixed effects and time-varying controls.  In
-order to correct for Family Wise Error Rates from multiple hypothesis testing,
-we calculate \citet{RomanoWolf} p-values, using their Stepdown methods. Romano
-Wolf p-values are presented in square brackets, and traditional (uncorrected)
-p-values are presented in round brackets.
+\multicolumn{7}{p{16cm}}{\begin{footnotesize} For full notes refer to table
+\ref{tab:empower}.  This placebo test uses only the two pre-reform rounds,
+and defines as a placebo treatment group residents of Mexico D.F.\ in round
+two.  A similar defintion is used to create the placebo Regressive Law Change
+group based on residents of regressive states, prior to the implementation of
+the reform.
 \end{footnotesize}}
 \end{tabular}\end{table}";
 #delimit cr

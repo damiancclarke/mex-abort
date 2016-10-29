@@ -104,6 +104,113 @@ local con4 `FE' `StateTrend' `CoVar1' `CoVar2'
 local con5 `FE' `StateTrend' `CoVar1' `CoVar2' `CoVar3'
 
 ********************************************************************************	
+*** (0) Summary stats
+********************************************************************************
+bys stateName: egen RS = max(regressive)
+gen regressiveState= RS>0
+gen DFState        = stateName=="DistritoFederal"
+gen nonRegDF       = regressiveState==0&DFState==0
+gen All            = 1
+
+file open sumstats using "$REG/Births-SumStats.tex", write replace
+#delimit ;
+file write sumstats "\begin{table} \centering
+\caption{State and Maternal Characteristics (Birth Data)}
+\begin{tabular}{lcccc}\toprule
+& (1) & (2) & (3) & (4) \\
+& Mexico & Regressive &\ Rest of\ \  & \ \ Full \ \ \\
+&City&States&Mexico&Country \\ \midrule";
+#delimit cr
+
+#delimit ;
+local names `" "ILE Reform" "Regressive Law Change" "Illiteracy"
+"People aged 6-14 with no schooling" "No Health Coverage" "Seguro Popular" "';
+#delimit cr
+local vars Reform regressive noRead noSchool noHealth seguroPop
+tokenize `vars'
+
+foreach nam of local names {
+    local j=1
+    foreach con in DFState==1 regressiveState==1 nonRegDF==1 All==1 {
+        qui sum `1' if `con'
+        local mean`j' = string(r(mean),"%5.3f")
+        local sd`j'   = string(r(sd)  ,"%5.3f")
+        local ++j
+    }
+    file write sumstats _n "`nam'&`mean1'&`mean2'&`mean3'&`mean4'\\"
+    file write sumstats _n "     &(`sd1')&(`sd2')&(`sd3')&(`sd4')\\"
+    macro shift
+}
+local j=1
+foreach con in DFState==1 regressiveState==1 nonRegDF==1 All==1 {
+    qui sum birthRate [fw=population] if `con'
+    local mean`j' = string(r(mean),"%5.3f")
+    local sd`j'   = string(r(sd)  ,"%5.3f")
+    local ++j
+}
+file write sumstats _n "Birth Rate (All)&`mean1'&`mean2'&`mean3'&`mean4'\\"
+file write sumstats _n "                &(`sd1')&(`sd2')&(`sd3')&(`sd4')\\"    
+gen     agegroup=1 if age>=15&age<=19
+replace agegroup=2 if age>=20&age<=24
+replace agegroup=3 if age>=25&age<=29
+replace agegroup=4 if age>=30&age<=34
+replace agegroup=5 if age>=35&age<=39
+replace agegroup=6 if age>=40&age<=44
+
+#delimit ;
+local names `" "Birth Rate 15-19" "Birth Rate 20-24" "Birth Rate 25-29"
+               "Birth Rate 30-34" "Birth Rate 35-39" "Birth Rate 40-44" "';
+#delimit cr
+local k=1
+foreach nam of local names {
+    local j=1
+    foreach con in DFState==1 regressiveState==1 nonRegDF==1 All==1 {
+        qui sum birthRate [fw=population] if `con'&agegroup==`k'
+        local mean`j' = string(r(mean),"%5.3f")
+        local sd`j'   = string(r(sd)  ,"%5.3f")
+        local ++j
+    }
+    file write sumstats _n "`nam'&`mean1'&`mean2'&`mean3'&`mean4'\\"
+    file write sumstats _n "     &(`sd1')&(`sd2')&(`sd3')&(`sd4')\\"    
+    local ++k
+}
+local j=1
+foreach con in DFState==1 regressiveState==1 nonRegDF==1 All==1 {
+    count if `con'
+    local n`j'=r(N)
+    sum birth if `con'
+    local mnb = r(mean)
+    local b`j'=string(`n`j''*`mnb', "%12.2gc")
+    local ++j
+}
+file write sumstats "\midrule"
+file write sumstats _n "States $\times$ Year&`n1'&`n2'&`n3'&`n4'\\"
+file write sumstats _n "Total Births&`b1'&`b2'&`b3'&`b4'\\"
+
+
+#delimit ;
+file write sumstats "\bottomrule
+\multicolumn{5}{p{13.2cm}}{{\footnotesize \textsc{Notes} Data on fertility and
+maternal characteristics is obtained from INEGI and covers all births among
+women aged 15-44 during the time period 2002-2011. Data on state level education
+and health care is obtained from the National Institute for Federalism and
+Municipal Development and the National Education Statistical Information System
+(respectively) for the same period. Mean values are displayed, with standard
+deviations below in parentheses. Regressive states are those which ever had
+a regressive law change posterior to 2008, and so regressive law change is
+the proportion of all years in these states which follow a law change.
+Similarly, ILE Reform refers to the proportion of years in Mexico D.F.\ which
+follow the implementation of the ILE Reform }}
+\end{tabular}
+\end{table}";
+#delimit cr
+file close sumstats
+
+exit
+
+
+
+********************************************************************************	
 *** (1a) log(births) no entropy weights
 ********************************************************************************
 local pwt  [aw=population]
@@ -129,10 +236,10 @@ esttab est1 est2 est5 est6 est7 est10 using "$REG/Births-wRegressive.tex",
 replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N, fmt(%9.0g) label(Observations))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
-keep(Reform regressive _cons)
 mgroups("All Women" "Teen-aged Women", pattern(1 0 0 1 0 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("The Effect of the ELA Reform and Resulting Law Changes on Birth Rates")
+title("The Effect of the ELA Reform and Resulting Law Changes on Birth Rates"
+      \label{tab:birth}) keep(Reform regressive _cons)
 postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
          "State Linear Trends   &   & Y & Y &   & Y & Y \\             "
          "Time-Varying Controls &   &   & Y &   &   & Y \\             "
@@ -147,49 +254,96 @@ postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
 #delimit cr
 estimates clear
 
-local pwt  [aw=birth]
-gen MMratio = (MMR/birth)*100000
-eststo: regress MMratio `Treat' `con1' `pwt', `se'
-eststo: regress MMratio `Treat' `con2' `pwt', `se'
-eststo: regress MMratio `Treat' `con3' `pwt', `se'
-eststo: regress MMratio `Treat' `con4' `pwt', `se'
-eststo: regress MMratio `Treat' `con5' `pwt', `se'
+
+********************************************************************************	
+*** (1b) Unweighted log(births) results
+********************************************************************************
+local pwt 
+estimates clear
+eststo: regress ln_birth `Treat' `con1' `pwt', `se'
+eststo: regress ln_birth `Treat' `con2' `pwt', `se'
+eststo: regress ln_birth `Treat' `con3' `pwt', `se'
+eststo: regress ln_birth `Treat' `con4' `pwt', `se'
+eststo: regress ln_birth `Treat' `con5' `pwt', `se'
 
 local cn if age<20
-eststo: regress MMratio `Treat' `con1' `pwt' `cn', `se'
-eststo: regress MMratio `Treat' `con2' `pwt' `cn', `se'
-eststo: regress MMratio `Treat' `con3' `pwt' `cn', `se'
-eststo: regress MMratio `Treat' `con4' `pwt' `cn', `se'
-eststo: regress MMratio `Treat' `con5' `pwt' `cn', `se'
-lab var MMratio "MMR"
+eststo: regress ln_birth `Treat' `con1' `pwt' `cn', `se'
+eststo: regress ln_birth `Treat' `con2' `pwt' `cn', `se'
+eststo: regress ln_birth `Treat' `con3' `pwt' `cn', `se'
+eststo: regress ln_birth `Treat' `con4' `pwt' `cn', `se'
+eststo: regress ln_birth `Treat' `con5' `pwt' `cn', `se'
+lab var regressive "Regressive Law Change"
+lab var Reform     "ILE Reform"
+lab var ln_birth   "ln(Birth)"
 
 #delimit ;
-esttab est1 est2 est5 est6 est7 est10 using "$REG/MMR-wRegressive.tex",
+esttab est1 est2 est5 est6 est7 est10 using "$REG/Births-unweight.tex",
 replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
 (N, fmt(%9.0g) label(Observations))
 starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
 keep(Reform regressive _cons)
 mgroups("All Women" "Teen-aged Women", pattern(1 0 0 1 0 0)
         prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span}))
-title("The Effect of the ELA Reform and Resulting Law Changes on Maternal Mortality Ratio")
+title("Unweighed Estimates of the Effect of Reforms on Birth Rates")
 postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
          "State Linear Trends   &   & Y & Y &   & Y & Y \\             "
          "Time-Varying Controls &   &   & Y &   &   & Y \\             "
          "\bottomrule\multicolumn{7}{p{14.8cm}}{\begin{footnotesize}   "
-         " Difference-in-difference estimates of the reform on the     "
-         "maternal mortality ratio (deaths per 100,000 live births)    "
-         "are displayed.  Standard errors clustered by state are       "
-         "presented in parentheses.  All regressions are weighted by   "
-         "the number of births occurring to the relevant age group     "
-         "in each state and year. ***p-value$<$0.01, **p-value$<$0.05, "
-         "*p-value$<$0.01."
+         " Regressions replicate table \ref{tab:birth}, however using  "
+         "unweighted age by state by year cell.                        "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01.        "
          "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
 #delimit cr
 estimates clear
 
 
 ********************************************************************************	
-*** (1b) log(births) with wild bootstrapping
+*** (1c) Effect on fertility by age
+********************************************************************************
+local pwt  [aw=population]
+local ageTitle 15-17 18-19 20-24 25-29 30-34 35-39 40-44 
+tokenize `ageTitle'
+
+generate 	ageGroupN = .
+replace 	ageGroupN=1 if age>=15&age<=19
+replace 	ageGroupN=2 if age>=20&age<=24
+replace 	ageGroupN=3 if age>=25&age<=29
+replace 	ageGroupN=4 if age>=30&age<=34
+replace 	ageGroupN=5 if age>=35&age<=39
+replace 	ageGroupN=6 if age>=40&age<=44
+
+
+
+foreach iter of numlist 1(1)6 {
+    preserve
+    keep if ageGroupN==`iter'
+    eststo: regress ln_birth `Treat' `con5' `pwt', `se'
+    restore
+}
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 using "$REG/Births-byAge.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N, fmt(%9.0g) label(Observations))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+mtitles("Ages 15-19" "Ages 20-24" "Ages 25-29" "Ages 30-34"
+        "Ages 35-39" "Ages 40-44")
+title("The Effect of Abortion Reform on Rates of Birth by Age"\label{tab:Age})
+keep(Reform regressive _cons)
+postfoot("\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize}      "
+         " All specifications include age, state and year fixed effects   "
+         "state-specific linear trends, and time varying controls (ie,the "
+         "specification in column (3) and (6) of table \ref{tab:birth}.)  "
+         "Standard errors clustered by state are presented in parentheses."
+         "All regressions are weighted by population of women of the      "
+         "relevant age group in each state and year.                      "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
+
+
+********************************************************************************	
+*** (1d) log(births) with wild bootstrapping
 ********************************************************************************
 local pwt  [aw=population]
 local cse  
@@ -232,12 +386,16 @@ foreach num of numlist 1 2 3 {
         sort Refboot1
         mkmat Refboot1, nomissing
         drop Refboot1
-        local lb = string(Refboot1[5,1], "%5.3f")
-        local ub = string(Refboot1[195,1], "%5.3f")
+        local lb   = string(Refboot1[5,1], "%5.3f")
+        local ub   = string(Refboot1[195,1], "%5.3f")
         local ci`num'A`v' = "[`lb',`ub']"
         local b`num'A`v' = string(Ests[1,`v'], "%5.3f")
-        if `lb'>0&`ub'>0 local b`num'A`v' = "`b`num'A`v''$^{\ddagger} $"
-        if `lb'<0&`ub'<0 local b`num'A`v' = "`b`num'A`v''$^{\ddagger} $"        
+        if Refboot1[5,1]>0&Refboot1[195,1]>0 {
+            local b`num'A`v' = "`b`num'A`v''$ ^{\ddagger\ddagger} $ "
+        }
+        if Refboot1[5,1]<0&Refboot1[195,1]<0 {
+            local b`num'A`v' = "`b`num'A`v''$ ^{\ddagger\ddagger} $"
+        }        
     }
 }
 
@@ -277,8 +435,12 @@ foreach num of numlist 1 2 3 {
         local ub = string(Refboot1[195,1], "%5.3f")
         local ci`num'Y`v' = "[`lb',`ub']"
         local b`num'Y`v' = string(Ests[1,`v'], "%5.3f")
-        if `lb'>0&`ub'>0 local b`num'Y`v' = "`b`num'Y`v''$^{\ddagger} $"
-        if `lb'<0&`ub'<0 local b`num'Y`v' = "`b`num'Y`v''$^{\ddagger} $"        
+        if Refboot1[5,1]>0&Refboot1[195,1]>0 {
+            local b`num'Y`v' = "`b`num'Y`v''$ ^{\ddagger\ddagger} $ "
+        }
+        if Refboot1[5,1]<0&Refboot1[195,1]<0 {
+            local b`num'Y`v' = "`b`num'Y`v''$ ^{\ddagger\ddagger} $"
+        }        
     }
 }
 file open results using "$REG/Births-wild.tex", write replace
@@ -299,13 +461,13 @@ State and Year FEs    & Y & Y & Y & Y & Y & Y \\
 State Linear Trends   &   & Y & Y &   & Y & Y \\ 
 Time-Varying Controls &   &   & Y &   &   & Y \\ 
 \bottomrule
-\multicolumn{7}{p{18cm}}{\begin{footnotesize} Results replicate unweighted
+\multicolumn{7}{p{18.6cm}}{\begin{footnotesize} Results replicate unweighted
 difference-in-difference estimates of the effect of reforms on rates of
 birth, however now using wild bootstrapped standard errors in place of
 analytical standard errors clustered at the level of the state.  Point
 estimates are presented, along with 95\% confidence intervals of these
-estimates in parentheses.  $^\ddagger $ Significant at the 95\% level.
-\end{footnotesize}}
+estimates in parentheses.  $^{\ddagger\ddagger} $ Significant at the 95\%
+level. \end{footnotesize}}
 \end{tabular}\end{table}";
 #delimit cr
 file close results
