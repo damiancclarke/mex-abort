@@ -17,12 +17,12 @@ global LOG "~/investigacion/2014/MexAbort/Source/Aug2016"
 log using "$LOG/ILE-sex.txt", text replace
 
 use "$DAT/MxFLS-sexBehaviour.dta", clear
+replace regressive = 1 if ymonth>=201008 & stateNum==30 & ymonth!=.
+
 rename ContraKnow        _v1
 rename mod_contrcep      _v2
 rename any_contra_method _v3
-rename age_marriage      _v4
-rename age_first_sex     _v5
-rename num_sex_partners  _v6
+rename num_sex_partners  _v4
 rename regressive Regressive
 
 #delimit ;
@@ -48,7 +48,7 @@ local Nreps 150
 
 
 **RUN REGRESSIONS AND BOOTSTRAP SAMPLE
-foreach num of numlist 1 2 3 4 5 6 {
+foreach num of numlist 1 2 3 4 {
     dis "Estimation and bootstrapping with variable `num'"
     qui eststo: areg _v`num' `CoVar' `FE' `Treat' `wt' `cnd', `se'
     foreach ivar of varlist Reform Regressive {
@@ -93,7 +93,7 @@ foreach ivar of varlist Reform Regressive {
     local maxt = 0
     local maxv = 0
     local pval = 0
-    local cand 1 2 3 4 5 6
+    local cand 1 2 3 4
     local rank
 
     while `pval'<1&length("`cand'")!=0 {
@@ -156,22 +156,22 @@ file open results using "$REG/SexBehaviour-Main.tex", write replace
 file write results "\begin{table}[htbp]\centering
 \caption{The Effect of the Abortion Reform on Reported Sexual
 Behaviour (Panel Specification)`lc'}
-\begin{tabular}{l*{6}{c}}  \toprule
-&(1)&(2)&(3)&(4)&(5)&(6) \\
-& Modern Contracep & Any           & Modern        & Age at      & Age at 1st  & Num of\\
-& Knowledge        & Contraception & Contraception & First Union & Intercourse & Sex Partners\\
-\midrule  ILE Reform &`b1a'&`b2a'&`b3a'&`b4a'&`b5a'&`b6a'\\
-&(`p1a')&(`p2a')&(`p3a')&(`p4a')&(`p5a')&(`p6a')\\
-&[`prm1a']&[`prm2a']&[`prm3a']&[`prm4a']&[`prm5a']&[`prm6a']\\
-&&&&&&\\
-Regressive Law Change &`b1b'&`b2b'&`b3b'&`b4b'&`b5b'&`b6b'\\
-&(`p1b')&(`p2b')&(`p3b')&(`p4b')&(`p5b')&(`p6b')\\
-&[`prm1b']&[`prm2b']&[`prm3b']&[`prm4b']&[`prm5b']&[`prm6b']\\
-\midrule  Observations &`n1a'&`n2a'&`n3a'&`n4a'&`n5a'&`n6a'\\
-R-Squared &`r1'&`r2'&`r3'&`r4'&`r5'&`r6'\\
-Mean of Dep Var &`m1'&`m2'&`m3'&`m4'&`m5'&`m6'\\
+\begin{tabular}{l*{4}{c}}  \toprule
+&(1)&(2)&(3)&(4) \\
+& Modern Contracep & Any           & Modern        & Num of\\
+& Knowledge        & Contraception & Contraception & Sex Partners\\
+\midrule  ILE Reform &`b1a'&`b2a'&`b3a'&`b4a'\\
+&(`p1a')&(`p2a')&(`p3a')&(`p4a')\\
+&[`prm1a']&[`prm2a']&[`prm3a']&[`prm4a']\\
+&&&&\\
+Regressive Law Change &`b1b'&`b2b'&`b3b'&`b4b'\\
+&(`p1b')&(`p2b')&(`p3b')&(`p4b')\\
+&[`prm1b']&[`prm2b']&[`prm3b']&[`prm4b']\\
+\midrule  Observations &`n1a'&`n2a'&`n3a'&`n4a'\\
+R-Squared &`r1'&`r2'&`r3'&`r4'\\
+Mean of Dep Var &`m1'&`m2'&`m3'&`m4'\\
 \bottomrule
-\multicolumn{7}{p{20cm}}{\begin{footnotesize} Each column presents a seperate
+\multicolumn{5}{p{15.6cm}}{\begin{footnotesize} Each column presents a seperate
 regression of a contraceptive or sexual behaviour variable on abortion reform
 measures, house-hold fixed effects, year fixed effects and time-varying
 controls.  In order to correct for Family Wise Error Rates from multiple
@@ -205,7 +205,7 @@ local se    robust
 
 
 **RUN REGRESSIONS AND BOOTSTRAP SAMPLE
-foreach num of numlist 1 2 3 4 5 6 {
+foreach num of numlist 1 2 3 4 {
     dis "Estimation and bootstrapping with variable `num'"
     qui eststo: reg _v`num' `CoVar' `FE' `Treat' `wt' `cnd', `se'
     foreach ivar of varlist Reform Regressive {
@@ -250,7 +250,7 @@ foreach ivar of varlist Reform Regressive {
     local maxt = 0
     local maxv = 0
     local pval = 0
-    local cand 1 2 3 4 5 6
+    local cand 1 2 3 4
     local rank
 
     while `pval'<1&length("`cand'")!=0 {
@@ -313,24 +313,24 @@ file open results using "$REG/SexBehaviour-CrossSection.tex", write replace
 file write results "\begin{table}[htbp]\centering
 \caption{The Effect of the Abortion Reform on Reported Sexual
 Behaviour (Repeated Cross-Section Specification)`lc'}
-\begin{tabular}{l*{6}{c}}  \toprule
-&(1)&(2)&(3)&(4)&(5)&(6) \\
-& Modern Contracep & Any           & Modern        & Age at      & Age at 1st  & Num of\\
-& Knowledge        & Contraception & Contraception & First Union & Intercourse & Sex Partners\\
-\midrule  ILE Reform &`b1a'&`b2a'&`b3a'&`b4a'&`b5a'&`b6a'\\
-&(`p1a')&(`p2a')&(`p3a')&(`p4a')&(`p5a')&(`p6a')\\
-&[`prm1a']&[`prm2a']&[`prm3a']&[`prm4a']&[`prm5a']&[`prm6a']\\
-&&&&&&\\
-Regressive Law Change &`b1b'&`b2b'&`b3b'&`b4b'&`b5b'&`b6b'\\
-&(`p1b')&(`p2b')&(`p3b')&(`p4b')&(`p5b')&(`p6b')\\
-&[`prm1b']&[`prm2b']&[`prm3b']&[`prm4b']&[`prm5b']&[`prm6b']\\
-\midrule  Observations &`n1a'&`n2a'&`n3a'&`n4a'&`n5a'&`n6a'\\
-R-Squared &`r1'&`r2'&`r3'&`r4'&`r5'&`r6'\\
-Mean of Dep Var &`m1'&`m2'&`m3'&`m4'&`m5'&`m6'\\
+\begin{tabular}{l*{4}{c}}  \toprule
+&(1)&(2)&(3)&(4) \\
+& Modern Contracep & Any           & Modern        & Num of\\
+& Knowledge        & Contraception & Contraception & Sex Partners\\
+\midrule  ILE Reform &`b1a'&`b2a'&`b3a'&`b4a'\\
+&(`p1a')&(`p2a')&(`p3a')&(`p4a')\\
+&[`prm1a']&[`prm2a']&[`prm3a']&[`prm4a']\\
+&&&&\\
+Regressive Law Change &`b1b'&`b2b'&`b3b'&`b4b'\\
+&(`p1b')&(`p2b')&(`p3b')&(`p4b')\\
+&[`prm1b']&[`prm2b']&[`prm3b']&[`prm4b']\\
+\midrule  Observations &`n1a'&`n2a'&`n3a'&`n4a'\\
+R-Squared &`r1'&`r2'&`r3'&`r4'\\
+Mean of Dep Var &`m1'&`m2'&`m3'&`m4'\\
 \bottomrule
-\multicolumn{7}{p{20cm}}{\begin{footnotesize} Each column presents a seperate
-regression of a contraceptive or sexual behaviour variable on abortion reform
-measures, year fixed effects and time-varying
+\multicolumn{5}{p{15.6cm}}{\begin{footnotesize} Each column presents a
+seperate regression of a contraceptive or sexual behaviour variable on
+abortion reform measures, year fixed effects and time-varying
 controls.  In order to correct for Family Wise Error Rates from multiple
 hypothesis testing, we calculate \citet{RomanoWolf2005} p-values, using their
 Stepdown methods. Romano-Wolf p-values are presented in square brackets, and

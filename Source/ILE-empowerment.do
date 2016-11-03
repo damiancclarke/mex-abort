@@ -78,6 +78,7 @@ replace 	Regressive = 1 if ymonth>=201010 & stateNum==28 & ymonth!=.
 * Yucatan, Aug 07, 2009, with lag: May 14 2010
 replace 	Regressive = 1 if ymonth>=201005 & stateNum==31 & ymonth!=.
 * Veracruz, has there been a change?
+replace Regressive = 1 if ymonth>=201008 & stateNum==30 & ymonth!=.
 *replace Regressive = 0.75 if round==3 & stateNum==30
 replace 	Regressive = 0 if Regressive==. 
 replace 	Regressive = . if round==. | stateNum==. 
@@ -259,7 +260,7 @@ Regressive Law Change &`b5b'&`b6b'&`b7b'&`b10b'&`b12b'&`bIndb'\\
 R-Squared &`r5'&`r6'&`r7'&`r10'&`r12'&`rInd'\\
 Mean of Dep Var &`m5'&`m6'&`m7'&`m10'&`m12'&`mInd'\\
 \bottomrule
-\multicolumn{7}{p{16cm}}{\begin{footnotesize} Each column presents a seperate
+\multicolumn{7}{p{16.8cm}}{\begin{footnotesize} Each column presents a seperate
 regression of an empowerment variable or the empowerment index including
 house-hold fixed effects, year fixed effects and time-varying controls.  In
 order to correct for Family Wise Error Rates from multiple hypothesis testing,
@@ -435,7 +436,7 @@ Regressive Law Change &`b5b'&`b6b'&`b7b'&`b10b'&`b12b'&`bIndb'\\
 R-Squared &`r5'&`r6'&`r7'&`r10'&`r12'&`rInd'\\
 Mean of Dep Var &`m5'&`m6'&`m7'&`m10'&`m12'&`mInd'\\
 \bottomrule
-\multicolumn{7}{p{16cm}}{\begin{footnotesize} For full notes refer to table
+\multicolumn{7}{p{16.6cm}}{\begin{footnotesize} For full notes refer to table
 \ref{tab:empower}.  Regression results presented here are estimated as in
 table \ref{tab:empower}, however now the sample consists of married women
 \emph{above} fertile age (45 years and above).
@@ -615,7 +616,7 @@ Regressive Law Change &`b5b'&`b6b'&`b7b'&`b10b'&`b12b'&`bIndb'\\
 R-Squared &`r5'&`r6'&`r7'&`r10'&`r12'&`rInd'\\
 Mean of Dep Var &`m5'&`m6'&`m7'&`m10'&`m12'&`mInd'\\
 \bottomrule
-\multicolumn{7}{p{16cm}}{\begin{footnotesize} For full notes refer to table
+\multicolumn{7}{p{16.6cm}}{\begin{footnotesize} For full notes refer to table
 \ref{tab:empower}.  This placebo test uses only the two pre-reform rounds,
 and defines as a placebo treatment group residents of Mexico D.F.\ in round
 two.  A similar defintion is used to create the placebo Regressive Law Change

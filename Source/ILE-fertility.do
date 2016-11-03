@@ -102,7 +102,7 @@ local con2 `FE' `StateTrend'
 local con3 `FE' `StateTrend' `CoVar1'
 local con4 `FE' `StateTrend' `CoVar1' `CoVar2'
 local con5 `FE' `StateTrend' `CoVar1' `CoVar2' `CoVar3'
-
+/*
 ********************************************************************************	
 *** (0) Summary stats
 ********************************************************************************
@@ -208,7 +208,7 @@ file close sumstats
 
 exit
 
-
+*/
 
 ********************************************************************************	
 *** (1a) log(births) no entropy weights
@@ -341,7 +341,36 @@ postfoot("\bottomrule\multicolumn{7}{p{16.2cm}}{\begin{footnotesize}      "
 #delimit cr
 estimates clear
 
+foreach iter of numlist 1(1)6 {
+    preserve
+    keep if ageGroupN==`iter'
+    eststo: regress birthRate `Treat' `con5' `pwt', `se'
+    restore
+}
+eststo: regress birthRate `Treat' `con5' `pwt', `se'
+#delimit ;
+esttab est1 est2 est3 est4 est5 est6 est7 using "$REG/Births-rates.tex",
+replace cells(b(star fmt(%-9.3f)) se(fmt(%-9.3f) par([ ]) )) stats
+(N, fmt(%9.0g) label(Observations))
+starlevel ("*" 0.10 "**" 0.05 "***" 0.01) collabels(none) label
+mtitles("Ages 15-19" "Ages 20-24" "Ages 25-29" "Ages 30-34"
+        "Ages 35-39" "Ages 40-44" "All Ages")
+title("The Effect of Abortion Reform on Rates of Birth by Age"\label{tab:rate})
+keep(Reform regressive)
+postfoot("\bottomrule\multicolumn{8}{p{19.4cm}}{\begin{footnotesize}      "
+         "Regressions results using rates of birth are displayed.  All    "
+         "specifications include age, state and year fixed effects,       "
+         "state-specific linear trends, and time varying controls (ie,the "
+         "specification in column (3) and (6) of table \ref{tab:birth}.)  "
+         "Standard errors clustered by state are presented in parentheses."
+         "All regressions are weighted by population of women of the      "
+         "relevant age group in each state and year.                      "
+         "***p-value$<$0.01, **p-value$<$0.05, *p-value$<$0.01."
+         "\end{footnotesize}}\end{tabular}\end{table}") style(tex);
+#delimit cr
+estimates clear
 
+exit
 ********************************************************************************	
 *** (1d) log(births) with wild bootstrapping
 ********************************************************************************
@@ -653,7 +682,7 @@ postfoot("State and Year FEs    & Y & Y & Y & Y & Y & Y \\             "
 #delimit cr
 estimates clear
 
-
+*/
 ********************************************************************************	
 *** (3) Event Studies
 ********************************************************************************
@@ -699,6 +728,43 @@ twoway line EST NUM in 1/`j', lcolor(black) lwidth(medthick) scheme(s1mono)
   legend(order(1 "Point Estimate" 2 "95% CI"));
 graph export "$GRA/birthEvent.eps", replace as(eps);
 #delimit cr
+
+drop EST LB UB NUM
+local c if age>=15&age<=19
+eststo: regress ln_birth `con1' `CoVar1' `CoVar3' `events' `c' `pwt', `se' 
+gen EST = .
+gen LB  = .
+gen UB  = .
+gen NUM = .
+local j=1
+foreach num of numlist 5(-1)1 {
+    replace EST = _b[progressiveN`num'] in `j'
+    replace LB  = _b[progressiveN`num']-1.96*_se[progressiveN`num'] in `j'
+    replace UB  = _b[progressiveN`num']+1.96*_se[progressiveN`num'] in `j'
+    replace NUM = -`num' in `j'
+    local ++j
+}
+replace EST = 0 in `j'
+replace LB  = 0 in `j'
+replace UB  = 0 in `j'
+replace NUM = 0 in `j'
+local ++j
+
+foreach num of numlist 1(1)4 {
+    replace EST = _b[progressiveP`num'] in `j'
+    replace LB  = _b[progressiveP`num']-1.96*_se[progressiveP`num'] in `j'
+    replace UB  = _b[progressiveP`num']+1.96*_se[progressiveP`num'] in `j'
+    replace NUM = `num' in `j'
+    local ++j
+}
+#delimit ;
+twoway line EST NUM in 1/`j', lcolor(black) lwidth(medthick) scheme(s1mono)
+  || rcap LB UB NUM in 1/`j', lcolor(gs3) xtitle("Time") ytitle("Estimate")
+  yline(0, lcolor(black) lpattern(dash)) xlabel(-5 -4 -3 -2 -1 0 1 2 3 4)
+  legend(order(1 "Point Estimate" 2 "95% CI"));
+graph export "$GRA/birthEvent-1519.eps", replace as(eps);
+#delimit cr
+
 
 
 ********************************************************************************	
